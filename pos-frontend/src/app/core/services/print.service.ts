@@ -112,7 +112,8 @@ export class PrintService {
 
   async connect(): Promise<void> {
     try {
-      this.qz = await import('qz-tray' as any);
+      const qzModule = await import('qz-tray' as any);
+      this.qz = qzModule.default ?? qzModule;
 
       this.qz.security.setCertificatePromise((resolve: any) => resolve(QZ_CERTIFICATE));
       this.qz.security.setSignatureAlgorithm('SHA512');
