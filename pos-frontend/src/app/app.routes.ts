@@ -15,7 +15,11 @@ export const routes: Routes = [
       { path: 'sales', loadComponent: () => import('./features/sales/sales-history/sales-history.component').then(m => m.SalesHistoryComponent) },
       { path: 'credits', loadComponent: () => import('./features/credits/credits.component').then(m => m.CreditsComponent) },
       { path: 'returns', loadComponent: () => import('./features/returns/return-list/return-list.component').then(m => m.ReturnListComponent) },
+      { path: 'warranty', loadComponent: () => import('./features/warranty/warranty.component').then(m => m.WarrantyComponent) },
+      { path: 'close-till', loadComponent: () => import('./features/close-till/close-till.component').then(m => m.CloseTillComponent) },
+      { path: 'cash-reconciliation', loadComponent: () => import('./features/cash-reconciliation/cash-reconciliation.component').then(m => m.CashReconciliationComponent), canActivate: [ownerGuard] },
       { path: 'reports', loadComponent: () => import('./features/reports/daily-report/daily-report.component').then(m => m.DailyReportComponent), canActivate: [ownerGuard] },
+      { path: 'expenses', loadComponent: () => import('./features/expenses/expenses.component').then(m => m.ExpensesComponent), canActivate: [ownerGuard] },
       { path: 'settings', loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent), canActivate: [ownerGuard] },
       { path: '', redirectTo: 'pos', pathMatch: 'full' }
     ]

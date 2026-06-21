@@ -2,6 +2,7 @@ export interface Product {
   id: number;
   name: string;
   description?: string;
+  shopCode?: string;
   barcode?: string;
   categoryId?: number;
   categoryName?: string;
@@ -37,10 +38,17 @@ export interface Supplier {
   phone?: string;
   address?: string;
   notes?: string;
+  balance: number;
   active: boolean;
 }
 
 export interface Salesperson {
+  id: number;
+  name: string;
+  active: boolean;
+}
+
+export interface TempWorker {
   id: number;
   name: string;
   active: boolean;

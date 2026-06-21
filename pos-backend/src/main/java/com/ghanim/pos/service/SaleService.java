@@ -206,7 +206,10 @@ public class SaleService {
         m.put("notes", sale.getNotes());
         m.put("items", items.stream().map(i -> {
             Map<String, Object> item = new HashMap<>();
+            item.put("id", i.getId());
+            item.put("productId", i.getProduct() != null ? i.getProduct().getId() : null);
             item.put("name", i.getProductName());
+            item.put("productName", i.getProductName());
             item.put("quantity", i.getQuantity());
             item.put("unitPrice", i.getUnitPrice());
             item.put("discount", i.getItemDiscount());
@@ -216,16 +219,26 @@ public class SaleService {
         return m;
     }
 
+    @org.springframework.beans.factory.annotation.Value("${pos.manager.pin:1234}")
+    private String managerPin;
+
     @Transactional
-    public void cancelSale(Long id) {
+    public void cancelSale(Long id, String pin, String reason) {
+        if (!managerPin.equals(pin)) {
+            throw new IllegalArgumentException("Incorrect manager PIN");
+        }
+        if (reason == null || reason.isBlank()) {
+            throw new IllegalArgumentException("Cancellation reason is required");
+        }
         Sale sale = saleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Sale not found: " + id));
         if (!"COMPLETED".equals(sale.getStatus())) {
             throw new IllegalArgumentException("Sale cannot be cancelled");
         }
         sale.setStatus("CANCELLED");
+        sale.setCancelReason(reason);
+        sale.setCancelledAt(java.time.LocalDateTime.now());
         saleRepository.save(sale);
-        // Restore stock
         sale.getItems().forEach(item ->
                 stockService.addShopStock(item.getProduct(), item.getQuantity()));
     }

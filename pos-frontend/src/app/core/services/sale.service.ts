@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { CheckoutRequest, HeldSale, Sale } from '../models/sale.model';
+import { CheckoutRequest, HeldSale } from '../models/sale.model';
 
 @Injectable({ providedIn: 'root' })
 export class SaleService {
@@ -31,8 +31,30 @@ export class SaleService {
     return this.http.post<any>(`${this.base}/${id}/pay`, { amount }).pipe(map(() => undefined));
   }
 
-  cancel(id: number): Observable<void> {
-    return this.http.post<any>(`${this.base}/${id}/cancel`, {});
+  cancel(id: number, pin: string, reason: string): Observable<void> {
+    return this.http.post<any>(`${this.base}/${id}/cancel`, { pin, reason }).pipe(map(() => undefined));
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class ReturnService {
+  private base = `${environment.apiUrl}/returns`;
+
+  constructor(private http: HttpClient) {}
+
+  processReturn(data: {
+    originalSaleId?: number;
+    sessionId: number;
+    salespersonId?: number;
+    returnType: 'CASH_REFUND' | 'EXCHANGE';
+    items: { productId: number; quantity: number; unitPrice: number }[];
+    reason?: string;
+  }): Observable<any> {
+    return this.http.post<any>(this.base, data).pipe(map(r => r.data));
+  }
+
+  getByDate(date: string): Observable<any[]> {
+    return this.http.get<any>(this.base, { params: { date } }).pipe(map(r => r.data));
   }
 }
 

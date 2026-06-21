@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+﻿import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -74,7 +74,7 @@ interface NavItem {
     .sidebar {
       width: 195px;
       min-width: 195px;
-      background: #1a2332;
+      background: #1b3050;
       color: #fff;
       display: flex;
       flex-direction: column;
@@ -138,7 +138,7 @@ interface NavItem {
     }
     .user-avatar {
       width: 26px; height: 26px; border-radius: 50%;
-      background: #c9a84c; color: #1a2332;
+      background: #c9a84c; color: #1b3050;
       display: flex; align-items: center; justify-content: center;
       font-size: 11px; font-weight: 700; flex-shrink: 0;
     }
@@ -178,6 +178,9 @@ export class SidebarComponent {
     { label: 'Sales History',icon: 'receipt_long',           route: '/sales' },
     { label: 'Credits',      icon: 'account_balance',        route: '/credits' },
     { label: 'Returns',      icon: 'assignment_return',      route: '/returns' },
+    { label: 'Warranty',     icon: 'verified_user',          route: '/warranty' },
+    { label: 'Close Till',   icon: 'point_of_sale',          route: '/close-till' },
+    { label: 'Cash Recon',   icon: 'account_balance_wallet', route: '/cash-reconciliation', ownerOnly: true },
     { label: 'Reports',      icon: 'bar_chart',              route: '/reports', ownerOnly: true },
     { label: 'Expenses',     icon: 'account_balance_wallet', route: '/expenses', ownerOnly: true },
     { label: 'Settings',     icon: 'settings',               route: '/settings', ownerOnly: true },
@@ -187,3 +190,5 @@ export class SidebarComponent {
     return this.navItems.filter(i => !i.ownerOnly || this.auth.isOwner());
   }
 }
+
+

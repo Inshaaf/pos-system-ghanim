@@ -62,6 +62,7 @@ public class Product {
     private LocalDateTime updatedAt;
 
     // POS-specific columns (added via ALTER TABLE)
+    private String shopCode;
     private String barcode;
     private String unit = "piece";
     private Integer minWholesaleQty = 1;

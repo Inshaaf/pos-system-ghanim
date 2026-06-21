@@ -20,8 +20,9 @@ public class SaleItem {
     @JsonIgnore
     private Sale sale;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "product_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"stockLocations", "category", "supplier", "hibernateLazyInitializer", "handler"})
     private Product product;
 
     @Column(nullable = false)

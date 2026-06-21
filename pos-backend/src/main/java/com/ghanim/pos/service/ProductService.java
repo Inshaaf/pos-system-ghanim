@@ -25,8 +25,11 @@ public class ProductService {
     @Transactional(readOnly = true)
     public List<ProductResponse> getPosProducts(String search, Long categoryId) {
         List<Product> products;
-        if (search != null && !search.isBlank()) {
-            products = productRepository.searchByName(search);
+        boolean hasSearch = search != null && !search.isBlank();
+        if (hasSearch && categoryId != null) {
+            products = productRepository.searchProductsByCategory(search, categoryId);
+        } else if (hasSearch) {
+            products = productRepository.searchProducts(search);
         } else if (categoryId != null) {
             products = productRepository.findByCategoryAndShowInPos(categoryId);
         } else {
@@ -57,6 +60,7 @@ public class ProductService {
                 .retailPrice(request.getRetailPrice())
                 .wholesalePrice(request.getWholesalePrice())
                 .costPrice(request.getCostPrice())
+                .shopCode(request.getShopCode() != null ? request.getShopCode().toUpperCase() : null)
                 .barcode(request.getBarcode())
                 .unit(request.getUnit())
                 .minWholesaleQty(request.getMinWholesaleQty())
@@ -101,6 +105,7 @@ public class ProductService {
         product.setRetailPrice(request.getRetailPrice());
         product.setWholesalePrice(request.getWholesalePrice());
         product.setCostPrice(request.getCostPrice());
+        product.setShopCode(request.getShopCode() != null ? request.getShopCode().toUpperCase() : null);
         product.setBarcode(request.getBarcode());
         product.setUnit(request.getUnit());
         product.setMinWholesaleQty(request.getMinWholesaleQty());

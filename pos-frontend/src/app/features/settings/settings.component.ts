@@ -8,8 +8,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { SalespersonService, CategoryService } from '../../core/services/product.service';
-import { Salesperson, Category } from '../../core/models/product.model';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatSelectModule } from '@angular/material/select';
+import { SalespersonService, CategoryService, TempWorkerService } from '../../core/services/product.service';
+import { Salesperson, Category, TempWorker } from '../../core/models/product.model';
 import { PrintService } from '../../core/services/print.service';
 
 @Component({
@@ -18,7 +20,7 @@ import { PrintService } from '../../core/services/print.service';
   imports: [
     CommonModule, FormsModule, MatCardModule, MatButtonModule,
     MatIconModule, MatFormFieldModule, MatInputModule, MatSnackBarModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule, MatSlideToggleModule, MatSelectModule
   ],
   template: `
     <div class="page-container">
@@ -71,6 +73,53 @@ import { PrintService } from '../../core/services/print.service';
         </div>
       </mat-card>
 
+      <!-- Day Salary Workers -->
+      <mat-card class="settings-card">
+        <h3 class="section-title">Day Salary Workers</h3>
+        <div class="sp-list">
+          @for (w of tempWorkers; track w.id) {
+            <div class="sp-item">
+              @if (editingTwId === w.id) {
+                <input class="add-input inline-edit" [(ngModel)]="editingTwName" (keydown.enter)="saveTwEdit(w)" />
+              } @else {
+                <span class="sp-name">{{ w.name }}</span>
+              }
+              <div class="sp-item-actions">
+                <span class="sp-status" [class.active]="w.active">{{ w.active ? 'Active' : 'Inactive' }}</span>
+                @if (editingTwId === w.id) {
+                  <button class="icon-action-btn save" (click)="saveTwEdit(w)" title="Save">
+                    <mat-icon>check</mat-icon>
+                  </button>
+                  <button class="icon-action-btn cancel" (click)="cancelTwEdit()" title="Cancel">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                } @else {
+                  <button class="icon-action-btn edit" (click)="startTwEdit(w)" title="Edit">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  @if (w.active) {
+                    <button class="icon-action-btn deactivate" (click)="deactivateTw(w)" title="Deactivate">
+                      <mat-icon>block</mat-icon>
+                    </button>
+                  } @else {
+                    <button class="icon-action-btn activate" (click)="activateTw(w)" title="Activate">
+                      <mat-icon>check_circle</mat-icon>
+                    </button>
+                  }
+                }
+              </div>
+            </div>
+          }
+        </div>
+        <div class="add-row">
+          <input class="add-input" [(ngModel)]="newTwName" placeholder="New worker name"
+            (keydown.enter)="addTempWorker()" />
+          <button mat-flat-button class="add-btn" (click)="addTempWorker()" [disabled]="!newTwName.trim()">
+            <mat-icon>add</mat-icon> Add
+          </button>
+        </div>
+      </mat-card>
+
       <!-- Printer Settings -->
       <mat-card class="settings-card">
         <h3 class="section-title">Printer Settings</h3>
@@ -110,7 +159,7 @@ import { PrintService } from '../../core/services/print.service';
             @if (btConnecting) {
               <mat-spinner diameter="16" />
             } @else {
-              <span class="bt-dot" [class.connected]="btConnected">●</span>
+              <span class="bt-dot" [class.connected]="btConnected">â—</span>
             }
             {{ btConnected ? 'Bluetooth Connected' : 'Connect via Bluetooth' }}
           </button>
@@ -142,7 +191,7 @@ import { PrintService } from '../../core/services/print.service';
 
         @if (availablePrinters.length) {
           <div class="printer-list">
-            <p class="field-label" style="margin-bottom:6px">Available printers — click to use as Receipt Printer:</p>
+            <p class="field-label" style="margin-bottom:6px">Available printers "” click to use as Receipt Printer:</p>
             @for (p of availablePrinters; track p) {
               <div class="printer-list-item" (click)="receiptPrinterName = p">
                 <mat-icon>print</mat-icon> {{ p }}
@@ -176,6 +225,36 @@ import { PrintService } from '../../core/services/print.service';
         </div>
       </mat-card>
 
+      <!-- Cashier Settings -->
+      <mat-card class="settings-card">
+        <h3 class="section-title">Cashier Settings</h3>
+
+        <div class="cashier-row">
+          <div class="cashier-row-label">
+            <span class="cashier-label">Auto-print receipt after checkout</span>
+            <span class="cashier-hint">When enabled, the receipt printer fires automatically on confirm. Disable if stock entry is still in progress.</span>
+          </div>
+          <mat-slide-toggle [(ngModel)]="autoPrintEnabled" color="primary"></mat-slide-toggle>
+        </div>
+
+        <div class="cashier-row" style="margin-top:16px">
+          <div class="cashier-row-label">
+            <span class="cashier-label">Receipt paper width</span>
+            <span class="cashier-hint">Select the thermal paper roll size loaded in your receipt printer.</span>
+          </div>
+          <mat-select [(ngModel)]="paperWidth" class="paper-select">
+            <mat-option value="80">80 mm</mat-option>
+            <mat-option value="58">58 mm</mat-option>
+          </mat-select>
+        </div>
+
+        <div class="printer-actions" style="margin-top:18px">
+          <button mat-flat-button class="add-btn" (click)="saveCashierSettings()">
+            <mat-icon>save</mat-icon> Save
+          </button>
+        </div>
+      </mat-card>
+
       <!-- Categories -->
       <mat-card class="settings-card">
         <h3 class="section-title">Categories</h3>
@@ -196,15 +275,15 @@ import { PrintService } from '../../core/services/print.service';
   `,
   styles: [`
     .page-container { padding: 24px; max-width: 700px; }
-    .page-title { font-size: 22px; font-weight: 700; color: #1a2332; margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: 700; color: #1b3050; margin-bottom: 20px; }
     .settings-card { margin-bottom: 20px; padding: 20px !important; }
-    .section-title { font-size: 16px; font-weight: 700; color: #1a2332; margin-bottom: 14px; }
+    .section-title { font-size: 16px; font-weight: 700; color: #1b3050; margin-bottom: 14px; }
 
     /* Salesperson list */
     .sp-list { margin-bottom: 12px; }
     .sp-item {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 8px 0; border-bottom: 1px solid #eef0f4; font-size: 14px; color: #1a2332;
+      padding: 8px 0; border-bottom: 1px solid #eef0f4; font-size: 14px; color: #1b3050;
       gap: 8px;
     }
     .sp-name { flex: 1; }
@@ -221,7 +300,7 @@ import { PrintService } from '../../core/services/print.service';
     }
     .icon-action-btn mat-icon { font-size: 16px; width: 16px; height: 16px; }
     .icon-action-btn.edit { color: #6b7280; }
-    .icon-action-btn.edit:hover { background: #f4f6f9; color: #1a2332; }
+    .icon-action-btn.edit:hover { background: #f4f6f9; color: #1b3050; }
     .icon-action-btn.deactivate { color: #c62828; }
     .icon-action-btn.deactivate:hover { background: #fdecea; }
     .icon-action-btn.activate { color: #2e7d32; }
@@ -234,13 +313,13 @@ import { PrintService } from '../../core/services/print.service';
     /* Add row */
     .add-row { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
     .add-input {
-      flex: 1; border: 1px solid #e2e6ec; border-radius: 6px; color: #1a2332;
+      flex: 1; border: 1px solid #e2e6ec; border-radius: 6px; color: #1b3050;
       padding: 9px 12px; font-family: 'Inter', sans-serif; font-size: 14px;
       outline: none; transition: border-color 0.15s;
     }
     .add-input:focus { border-color: #c9a84c; }
     .add-input::placeholder { color: #6b7280; }
-    .add-btn { background: #1a2332 !important; color: #fff !important; }
+    .add-btn { background: #1b3050 !important; color: #fff !important; }
 
     /* Printer status */
     .printer-status {
@@ -258,7 +337,7 @@ import { PrintService } from '../../core/services/print.service';
       padding: 10px 12px; font-size: 13px; color: #5d4037; margin-bottom: 14px;
     }
     .offline-help mat-icon { font-size: 18px; width: 18px; height: 18px; color: #f9a825; flex-shrink: 0; margin-top: 1px; }
-    .qz-link { color: #1a2332; font-weight: 600; text-decoration: underline; }
+    .qz-link { color: #1b3050; font-weight: 600; text-decoration: underline; }
     .qz-link:hover { color: #c9a84c; }
 
     /* Bluetooth divider */
@@ -284,26 +363,40 @@ import { PrintService } from '../../core/services/print.service';
     .printer-list-item {
       display: flex; align-items: center; gap: 8px; padding: 8px 10px;
       border: 1px solid #e2e6ec; border-radius: 6px; margin-bottom: 6px;
-      cursor: pointer; font-size: 13px; color: #1a2332; transition: all 0.15s;
+      cursor: pointer; font-size: 13px; color: #1b3050; transition: all 0.15s;
     }
     .printer-list-item:hover { border-color: #c9a84c; background: #fffbf0; }
     .printer-list-item mat-icon { font-size: 16px; width: 16px; height: 16px; color: #6b7280; }
+
+    /* Cashier settings */
+    .cashier-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+    .cashier-row-label { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+    .cashier-label { font-size: 14px; font-weight: 600; color: #1b3050; }
+    .cashier-hint { font-size: 12px; color: #6b7280; }
+    .paper-select { width: 110px; font-size: 14px; }
   `]
 })
 export class SettingsComponent implements OnInit {
   private spService = inject(SalespersonService);
+  private twService = inject(TempWorkerService);
   private catService = inject(CategoryService);
   private printService = inject(PrintService);
   private snack = inject(MatSnackBar);
 
   salespersons: Salesperson[] = [];
+  tempWorkers: TempWorker[] = [];
   categories: Category[] = [];
   newSpName = '';
+  newTwName = '';
   newCatName = '';
 
   // Salesperson edit state
   editingSpId: number | null = null;
   editingSpName = '';
+
+  // Day Salary Worker edit state
+  editingTwId: number | null = null;
+  editingTwName = '';
 
   // QZ Tray
   printerConnected = false;
@@ -322,16 +415,23 @@ export class SettingsComponent implements OnInit {
   btDeviceName = '';
   private btCharacteristic: any = null;
 
+  // Cashier settings
+  autoPrintEnabled = true;
+  paperWidth = '80';
+
   ngOnInit() {
     this.spService.getAll().subscribe(s => this.salespersons = s);
+    this.twService.getAll().subscribe(w => this.tempWorkers = w);
     this.catService.getAll().subscribe(c => this.categories = c);
     this.printService.connected$.subscribe(v => this.printerConnected = v);
     const cfg = this.printService.getConfig();
     this.receiptPrinterName = cfg.receiptPrinterName;
     this.labelPrinterName = cfg.labelPrinterName;
+    this.autoPrintEnabled = localStorage.getItem('pos_auto_print') !== 'false';
+    this.paperWidth = localStorage.getItem('pos_paper_width') || '80';
   }
 
-  // ── Salesperson edit ──────────────────────────────
+  // â”€â”€ Salesperson edit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   startEdit(sp: Salesperson) {
     this.editingSpId = sp.id;
@@ -354,10 +454,12 @@ export class SettingsComponent implements OnInit {
   }
 
   deactivateSp(sp: Salesperson) {
-    if (!confirm(`Deactivate "${sp.name}"?`)) return;
-    this.spService.update(sp.id, sp.name, false).subscribe(() => {
-      this.spService.getAll().subscribe(s => this.salespersons = s);
-      this.snack.open('Salesperson deactivated', '', { duration: 1500 });
+    const ref = this.snack.open(`Deactivate "${sp.name}"?`, 'Deactivate', { duration: 4000 });
+    ref.onAction().subscribe(() => {
+      this.spService.update(sp.id, sp.name, false).subscribe(() => {
+        this.spService.getAll().subscribe(s => this.salespersons = s);
+        this.snack.open('Salesperson deactivated', '', { duration: 1500 });
+      });
     });
   }
 
@@ -378,7 +480,49 @@ export class SettingsComponent implements OnInit {
     });
   }
 
-  // ── QZ Tray ───────────────────────────────────────
+  // ── Day Salary Workers ────────────────────────────────────────────
+
+  startTwEdit(w: TempWorker) { this.editingTwId = w.id; this.editingTwName = w.name; }
+  cancelTwEdit() { this.editingTwId = null; this.editingTwName = ''; }
+
+  saveTwEdit(w: TempWorker) {
+    const name = this.editingTwName.trim();
+    if (!name) return;
+    this.twService.update(w.id, name, w.active).subscribe(() => {
+      this.cancelTwEdit();
+      this.twService.getAll().subscribe(ww => this.tempWorkers = ww);
+      this.snack.open('Worker updated', '', { duration: 1500 });
+    });
+  }
+
+  deactivateTw(w: TempWorker) {
+    const ref = this.snack.open(`Deactivate “${w.name}”?`, 'Deactivate', { duration: 4000 });
+    ref.onAction().subscribe(() => {
+      this.twService.update(w.id, w.name, false).subscribe(() => {
+        this.twService.getAll().subscribe(ww => this.tempWorkers = ww);
+        this.snack.open('Worker deactivated', '', { duration: 1500 });
+      });
+    });
+  }
+
+  activateTw(w: TempWorker) {
+    this.twService.update(w.id, w.name, true).subscribe(() => {
+      this.twService.getAll().subscribe(ww => this.tempWorkers = ww);
+      this.snack.open('Worker activated', '', { duration: 1500 });
+    });
+  }
+
+  addTempWorker() {
+    const name = this.newTwName.trim();
+    if (!name) return;
+    this.twService.create(name).subscribe(() => {
+      this.newTwName = '';
+      this.twService.getAll().subscribe(ww => this.tempWorkers = ww);
+      this.snack.open('Worker added', '', { duration: 1500 });
+    });
+  }
+
+  // â”€â”€ QZ Tray â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   async listPrinters() {
     try {
@@ -426,7 +570,7 @@ export class SettingsComponent implements OnInit {
     finally { this.testingDrawer = false; }
   }
 
-  // ── Bluetooth ─────────────────────────────────────
+  // â”€â”€ Bluetooth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   async connectBluetooth() {
     if (!('bluetooth' in navigator)) {
@@ -449,8 +593,7 @@ export class SettingsComponent implements OnInit {
       });
       const server = await device.gatt.connect();
 
-      // Enumerate all services — log to console for diagnosis
-      let foundService: any = null;
+      // Enumerate all services "” log to console for diagnosis
       let foundChar: any = null;
       try {
         const services = await server.getPrimaryServices();
@@ -463,7 +606,6 @@ export class SettingsComponent implements OnInit {
               const p = ch.properties;
               console.log('  Char:', ch.uuid, '| write:', p.write, '| writeWithoutResponse:', p.writeWithoutResponse, '| notify:', p.notify, '| read:', p.read);
               if ((p.write || p.writeWithoutResponse) && !foundChar) {
-                foundService = svc;
                 foundChar = ch;
                 console.log('  ^^^ Using this characteristic for printing');
               }
@@ -507,7 +649,15 @@ export class SettingsComponent implements OnInit {
     this.snack.open('Bluetooth disconnected', '', { duration: 1500 });
   }
 
-  // ── Categories ────────────────────────────────────
+  // ── Cashier Settings ─────────────────────────────────────────────
+
+  saveCashierSettings() {
+    localStorage.setItem('pos_auto_print', this.autoPrintEnabled ? 'true' : 'false');
+    localStorage.setItem('pos_paper_width', this.paperWidth);
+    this.snack.open('Cashier settings saved', '', { duration: 1500 });
+  }
+
+  //â”€â”€ Categories â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   addCategory() {
     const name = this.newCatName.trim();
@@ -519,3 +669,5 @@ export class SettingsComponent implements OnInit {
     });
   }
 }
+
+

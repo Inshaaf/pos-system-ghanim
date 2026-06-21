@@ -1,5 +1,6 @@
 package com.ghanim.pos.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -19,10 +20,12 @@ public class HeldSale {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "session_id")
+    @JsonIgnore
     private Session session;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "salesperson_id")
+    @JsonIgnore
     private Salesperson salesperson;
 
     @Column(nullable = false)

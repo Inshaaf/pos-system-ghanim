@@ -1,4 +1,4 @@
-// ── Host fills main-content ───────────────────────
+﻿// â”€â”€ Host fills main-content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 :host {
   display: flex;
   flex: 1;
@@ -7,7 +7,7 @@
   min-width: 0;
 }
 
-// ── Wrapper ───────────────────────────────────────
+// â”€â”€ Wrapper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 .pos-wrapper {
   display: flex;
   flex-direction: column;
@@ -18,7 +18,7 @@
   background: #f4f6f9;
 }
 
-// ── Header ────────────────────────────────────────
+// â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 .pos-header {
   display: flex;
   align-items: center;
@@ -40,7 +40,7 @@
 .page-title {
   font-size: 17px;
   font-weight: 700;
-  color: #1a2332;
+  color: #1b3050;
   margin: 0;
   white-space: nowrap;
 }
@@ -76,7 +76,7 @@
   font-size: 13.5px;
   outline: none;
   font-family: "Inter", sans-serif;
-  color: #1a2332;
+  color: #1b3050;
   &::placeholder {
     color: #6b7280;
   }
@@ -101,7 +101,7 @@
   align-items: center;
   padding: 0;
   &:hover {
-    color: #1a2332;
+    color: #1b3050;
   }
   mat-icon {
     font-size: 16px;
@@ -130,7 +130,7 @@
   transition: background 0.15s;
   &:hover {
     background: #f4f6f9;
-    color: #1a2332;
+    color: #1b3050;
   }
   mat-icon {
     font-size: 22px;
@@ -157,7 +157,7 @@
   justify-content: center;
 }
 
-// ── Body ──────────────────────────────────────────
+// â”€â”€ Body â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 .pos-body {
   display: flex;
   flex: 1;
@@ -165,7 +165,7 @@
   min-width: 0;
 }
 
-// ── Product Panel ─────────────────────────────────
+// â”€â”€ Product Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 .product-panel {
   flex: 1;
   min-width: 0;
@@ -212,12 +212,12 @@
   font-family: "Inter", sans-serif;
   &:hover {
     border-color: #c9a84c;
-    color: #1a2332;
+    color: #1b3050;
   }
   &.active {
-    background: #1a2332;
+    background: #1b3050;
     color: #fff;
-    border-color: #1a2332;
+    border-color: #1b3050;
   }
 }
 
@@ -237,7 +237,7 @@
   transition: all 0.15s;
   &:hover {
     border-color: #c9a84c;
-    color: #1a2332;
+    color: #1b3050;
   }
   mat-icon {
     font-size: 16px;
@@ -332,7 +332,7 @@
 .product-name {
   font-size: 13px;
   font-weight: 600;
-  color: #1a2332;
+  color: #1b3050;
   line-height: 1.3;
   margin-bottom: 4px;
   display: -webkit-box;
@@ -344,7 +344,7 @@
 .product-price {
   font-size: 14px;
   font-weight: 700;
-  color: #1a2332;
+  color: #1b3050;
   margin-bottom: 3px;
 }
 
@@ -354,6 +354,20 @@
   font-weight: 500;
   &.low-stock {
     color: #c62828;
+  }
+  &.out-of-stock-label {
+    color: #c62828;
+    font-weight: 700;
+  }
+}
+
+.product-card.out-of-stock {
+  opacity: 0.55;
+  cursor: not-allowed;
+  &:hover {
+    transform: none;
+    box-shadow: 0 1px 3px rgba(26, 35, 50, 0.07);
+    border-color: #eef0f4;
   }
 }
 
@@ -389,7 +403,7 @@
   justify-content: center;
 }
 
-// ── Cart Panel ────────────────────────────────────
+// â”€â”€ Cart Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 .cart-panel {
   flex: 0 0 320px;
   width: 320px;
@@ -413,7 +427,7 @@
 .cart-title {
   font-size: 16px;
   font-weight: 700;
-  color: #1a2332;
+  color: #1b3050;
 }
 
 .cart-count {
@@ -516,7 +530,7 @@
 .cart-item-name {
   font-size: 13px;
   font-weight: 600;
-  color: #1a2332;
+  color: #1b3050;
   line-height: 1.3;
   white-space: nowrap;
   overflow: hidden;
@@ -588,14 +602,14 @@
   padding: 3px;
   font-size: 13px;
   font-family: "Inter", sans-serif;
-  color: #1a2332;
+  color: #1b3050;
   font-weight: 600;
 }
 
 .item-total {
   font-size: 13px;
   font-weight: 700;
-  color: #1a2332;
+  color: #1b3050;
 }
 
 .cart-item-disc-row {
@@ -618,7 +632,7 @@
   padding: 2px 5px;
   font-size: 12px;
   font-family: "Inter", sans-serif;
-  color: #1a2332;
+  color: #1b3050;
   text-align: center;
   &:focus {
     outline: none;
@@ -632,7 +646,7 @@
   font-weight: 600;
 }
 
-// ── Cart Summary ──────────────────────────────────
+// â”€â”€ Cart Summary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 .cart-summary {
   padding: 12px 16px;
   border-top: 1px solid #eef0f4;
@@ -675,7 +689,7 @@
   padding: 3px 6px;
   font-size: 13px;
   font-family: "Inter", sans-serif;
-  color: #1a2332;
+  color: #1b3050;
   text-align: right;
   &:focus {
     outline: none;
@@ -701,8 +715,8 @@
   cursor: pointer;
   font-family: "Inter", sans-serif;
   transition: all 0.15s;
-  &:hover { border-color: #c9a84c; color: #1a2332; }
-  &.active { border-color: #c9a84c; background: #c9a84c; color: #1a2332; }
+  &:hover { border-color: #c9a84c; color: #1b3050; }
+  &.active { border-color: #c9a84c; background: #c9a84c; color: #1b3050; }
 }
 
 .clear-chip {
@@ -727,16 +741,16 @@
   border-top: 1px solid #e2e6ec;
   font-size: 15px;
   font-weight: 700;
-  color: #1a2332;
+  color: #1b3050;
 }
 
 .total-val {
   font-size: 18px;
   font-weight: 800;
-  color: #1a2332;
+  color: #1b3050;
 }
 
-// ── Cart Actions ──────────────────────────────────
+// â”€â”€ Cart Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 .cart-actions {
   padding: 12px 14px;
   border-top: 1px solid #eef0f4;
@@ -762,7 +776,7 @@
     font-family: "Inter", sans-serif;
     transition: all 0.15s;
     &.active {
-      background: #1a2332;
+      background: #1b3050;
       color: #fff;
     }
   }
@@ -803,7 +817,7 @@
   width: 100%;
   padding: 11px;
   background: #fff;
-  color: #1a2332;
+  color: #1b3050;
   border: 1.5px solid #e2e6ec;
   border-radius: 10px;
   cursor: pointer;
@@ -816,7 +830,7 @@
   font-family: "Inter", sans-serif;
   transition: all 0.15s;
   &:hover:not(:disabled) {
-    border-color: #1a2332;
+    border-color: #1b3050;
     background: #f4f6f9;
   }
   &:disabled {
@@ -832,7 +846,7 @@
   }
 }
 
-// ── Bottom Actions ────────────────────────────────
+// â”€â”€ Bottom Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 .bottom-actions {
   display: flex;
   border-top: 1px solid #eef0f4;
@@ -880,3 +894,5 @@
     font-family: "Inter", sans-serif;
   }
 }
+
+

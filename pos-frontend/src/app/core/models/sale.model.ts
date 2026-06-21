@@ -56,6 +56,8 @@ export interface Sale {
 
 export interface SaleItem {
   id: number;
+  productId?: number;
+  product?: { id: number; name: string };
   productName: string;
   quantity: number;
   unitPrice: number;

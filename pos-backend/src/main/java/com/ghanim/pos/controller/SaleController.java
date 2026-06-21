@@ -52,8 +52,8 @@ public class SaleController {
     }
 
     @PostMapping("/{id}/cancel")
-    public ResponseEntity<ApiResponse<Void>> cancel(@PathVariable Long id) {
-        saleService.cancelSale(id);
+    public ResponseEntity<ApiResponse<Void>> cancel(@PathVariable Long id, @RequestBody java.util.Map<String, String> body) {
+        saleService.cancelSale(id, body.get("pin"), body.get("reason"));
         return ResponseEntity.ok(ApiResponse.ok(null, "Sale cancelled"));
     }
 }

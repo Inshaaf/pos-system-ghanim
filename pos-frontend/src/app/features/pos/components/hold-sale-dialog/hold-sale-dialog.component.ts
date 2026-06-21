@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+﻿import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
@@ -33,7 +33,7 @@ import { HeldSaleService } from '../../../../core/services/sale.service';
     mat-dialog-content { padding: 8px 24px 0; }
     .hint { color: #777; font-size: 13px; margin-bottom: 12px; }
     .full-width { width: 100%; }
-    .hold-btn { background: #1a2332 !important; color: #fff !important; }
+    .hold-btn { background: #1b3050 !important; color: #fff !important; }
   `]
 })
 export class HoldSaleDialogComponent {
@@ -58,3 +58,5 @@ export class HoldSaleDialogComponent {
     });
   }
 }
+
+

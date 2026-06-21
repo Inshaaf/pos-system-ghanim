@@ -33,7 +33,7 @@ import { CreditPaymentDialogComponent } from './credit-payment-dialog/credit-pay
         <mat-form-field appearance="outline" class="search-field">
           <mat-label>Search by customer or sale #</mat-label>
           <mat-icon matPrefix>search</mat-icon>
-          <input matInput [(ngModel)]="search" (ngModelChange)="applyFilter()" placeholder="Search…" />
+          <input matInput [(ngModel)]="search" (ngModelChange)="applyFilter()" placeholder="Search..." />
         </mat-form-field>
       </mat-card>
 
@@ -71,7 +71,7 @@ import { CreditPaymentDialogComponent } from './credit-payment-dialog/credit-pay
   styles: [`
     .page-container { padding: 24px; }
     .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
-    .page-title { font-size: 22px; font-weight: 700; color: #1a2332; margin: 0; }
+    .page-title { font-size: 22px; font-weight: 700; color: #1b3050; margin: 0; }
     .page-sub { color: #888; font-size: 13px; margin: 4px 0 0; }
     .search-card { margin-bottom: 16px; padding: 12px 16px; }
     .search-field { width: 100%; max-width: 400px; }
@@ -86,9 +86,9 @@ import { CreditPaymentDialogComponent } from './credit-payment-dialog/credit-pay
       gap: 16px;
     }
     .credit-left { display: flex; align-items: center; gap: 16px; flex: 1; min-width: 0; }
-    .sale-id { font-weight: 700; color: #1a2332; min-width: 50px; font-size: 15px; }
+    .sale-id { font-weight: 700; color: #1b3050; min-width: 50px; font-size: 15px; }
     .sale-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-    .customer-name { font-weight: 600; font-size: 14px; color: #1a2332; }
+    .customer-name { font-weight: 600; font-size: 14px; color: #1b3050; }
     .sale-date { font-size: 12px; color: #888; }
     .sale-type { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; align-self: flex-start; }
     .sale-type.retail { background: #e3f2fd; color: #1565c0; }
@@ -144,3 +144,5 @@ export class CreditsComponent implements OnInit {
     });
   }
 }
+
+

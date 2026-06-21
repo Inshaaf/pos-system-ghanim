@@ -24,7 +24,7 @@ import { SessionService } from '../../core/services/session.service';
     .main-content {
       flex: 1;
       min-width: 0;
-      overflow: hidden;
+      overflow-y: auto;
       background: #f5f5f5;
       display: flex;
       flex-direction: column;

@@ -73,7 +73,7 @@ import { Customer } from '../../../../core/models/customer.model';
                 [ngModel]="customerSearch"
                 (ngModelChange)="onCustomerSearch($event)"
                 [matAutocomplete]="customerAuto"
-                placeholder="Search by name or phone…" />
+                placeholder="Search by name or phone..." />
               @if (selectedCustomer) {
                 <button matSuffix mat-icon-button (click)="clearCustomer()">
                   <mat-icon>close</mat-icon>
@@ -126,7 +126,7 @@ import { Customer } from '../../../../core/models/customer.model';
             @if (cashTendered > 0) {
               <div class="change-display" [class.insufficient]="change < 0">
                 @if (change < 0) {
-                  <span>Insufficient — need LKR {{ (-change) | number:'1.2-2' }} more</span>
+                  <span>Insufficient "” need LKR {{ (-change) | number:'1.2-2' }} more</span>
                 } @else {
                   <span>Change: <strong>LKR {{ change | number:'1.2-2' }}</strong></span>
                 }
@@ -167,7 +167,7 @@ import { Customer } from '../../../../core/models/customer.model';
   `,
   styles: [`
     .checkout-dialog { min-width: 420px; }
-    h2 { color: #1a2332; font-weight: 700; padding: 16px 24px 0; }
+    h2 { color: #1b3050; font-weight: 700; padding: 16px 24px 0; }
     mat-dialog-content { padding: 0 24px; }
     .summary-section { margin-bottom: 16px; }
     .summary-row {
@@ -175,7 +175,7 @@ import { Customer } from '../../../../core/models/customer.model';
       padding: 7px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px;
     }
     .discount { color: #c62828; }
-    .total-row { font-weight: 700; font-size: 17px; color: #1a2332; border-bottom: none; }
+    .total-row { font-weight: 700; font-size: 17px; color: #1b3050; border-bottom: none; }
     .section-label { font-weight: 600; margin-bottom: 8px; color: #6b7280; font-size: 13px; }
     .payment-methods { display: flex; gap: 8px; margin-bottom: 4px; }
     .method-btn {
@@ -184,15 +184,15 @@ import { Customer } from '../../../../core/models/customer.model';
       display: flex; flex-direction: column; align-items: center; gap: 4px;
       font-family: 'Inter', sans-serif; transition: all 0.15s; color: #6b7280;
     }
-    .method-btn:hover { border-color: #c9a84c; color: #1a2332; }
-    .method-btn.active { border-color: #c9a84c; background: #c9a84c; color: #1a2332; }
+    .method-btn:hover { border-color: #c9a84c; color: #1b3050; }
+    .method-btn.active { border-color: #c9a84c; background: #c9a84c; color: #1b3050; }
     .quick-chips { display: flex; gap: 6px; flex-wrap: wrap; margin: -4px 0 8px; }
     .quick-chip {
       padding: 4px 12px; border: 1px solid #e2e6ec; border-radius: 16px;
       background: #fff; font-size: 12px; font-weight: 600; color: #6b7280;
       cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.15s;
-      &:hover { border-color: #c9a84c; color: #1a2332; }
-      &.active { border-color: #c9a84c; background: #c9a84c; color: #1a2332; }
+      &:hover { border-color: #c9a84c; color: #1b3050; }
+      &.active { border-color: #c9a84c; background: #c9a84c; color: #1b3050; }
     }
     .exact-chip { color: #2e7d32; border-color: #a5d6a7; &:hover { background: #e8f5e9; border-color: #2e7d32; color: #2e7d32; } }
     .change-display {
@@ -327,7 +327,9 @@ export class CheckoutDialogComponent implements OnInit {
 
     this.saleService.checkout(req as any).subscribe({
       next: result => {
-        this.autoPrint(result);
+        if (localStorage.getItem('pos_auto_print') !== 'false') {
+          this.autoPrint(result);
+        }
         this.dialogRef.close({
           ...result,
           _itemDiscount: this.data.totalDiscount,
@@ -370,3 +372,5 @@ export class CheckoutDialogComponent implements OnInit {
     this.printService.printReceipt(receiptData).catch(() => {});
   }
 }
+
+

@@ -24,8 +24,11 @@ public class HeldSaleService {
     public HeldSale hold(HoldSaleRequest request) {
         Session session = sessionRepository.findById(request.getSessionId())
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found"));
-        Salesperson sp = salespersonRepository.findById(request.getSalespersonId())
-                .orElseThrow(() -> new ResourceNotFoundException("Salesperson not found"));
+
+        Salesperson sp = null;
+        if (request.getSalespersonId() != null) {
+            sp = salespersonRepository.findById(request.getSalespersonId()).orElse(null);
+        }
 
         return heldSaleRepository.save(HeldSale.builder()
                 .session(session)

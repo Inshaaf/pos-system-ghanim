@@ -58,11 +58,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/upload").authenticated()
                         .requestMatchers(HttpMethod.POST,
-                                "/api/products",
                                 "/api/categories",
                                 "/api/suppliers",
                                 "/api/salespersons").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.POST, "/api/products").authenticated()
                         .requestMatchers(HttpMethod.PUT,
                                 "/api/products/**",
                                 "/api/categories/**",
@@ -76,10 +77,14 @@ public class SecurityConfig {
                                 "/api/stock/shop",
                                 "/api/stock/low",
                                 "/api/stock/adjustments").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.POST, "/api/stock-requests").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/stock-requests").hasRole("OWNER")
+                        .requestMatchers("/api/stock-requests/*/approve",
+                                "/api/stock-requests/*/reject").hasRole("OWNER")
                         .requestMatchers(HttpMethod.POST,
                                 "/api/sessions/*/close").hasRole("OWNER")
-                        .requestMatchers(HttpMethod.POST,
-                                "/api/sales/*/cancel").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/sessions", "/api/sessions/*/reconciliation").hasRole("OWNER")
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

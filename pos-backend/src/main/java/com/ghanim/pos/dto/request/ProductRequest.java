@@ -16,6 +16,7 @@ public class ProductRequest {
     @NotNull
     private BigDecimal wholesalePrice;
     private BigDecimal costPrice;
+    private String shopCode;
     private String barcode;
     private String unit = "piece";
     private Integer minWholesaleQty = 1;

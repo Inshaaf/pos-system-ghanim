@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -37,5 +38,27 @@ public class SessionController {
         BigDecimal closingCash = new BigDecimal(body.getOrDefault("closingCash", "0").toString());
         String notes = (String) body.get("notes");
         return ResponseEntity.ok(ApiResponse.ok(sessionService.closeSession(id, closingCash, notes), "Session closed"));
+    }
+
+    // Cashier submits their blind count — returns NO financial information
+    @PostMapping("/{id}/submit-count")
+    public ResponseEntity<ApiResponse<Void>> submitCount(
+            @PathVariable Long id, @RequestBody Map<String, Object> body) {
+        BigDecimal closingCash = new BigDecimal(body.getOrDefault("closingCash", "0").toString());
+        String notes = (String) body.get("notes");
+        sessionService.submitCount(id, closingCash, notes);
+        return ResponseEntity.ok(ApiResponse.ok(null, "Your count has been submitted. Thank you."));
+    }
+
+    // Owner: list all sessions with full reconciliation
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getAll() {
+        return ResponseEntity.ok(ApiResponse.ok(sessionService.getAllWithReconciliation()));
+    }
+
+    // Owner: single session reconciliation
+    @GetMapping("/{id}/reconciliation")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getReconciliation(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok(sessionService.getReconciliation(id)));
     }
 }

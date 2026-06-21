@@ -32,6 +32,23 @@ export class SessionService {
       tap(() => this.currentSession.set(null))
     );
   }
+
+  // Cashier blind submit — server returns no financial details
+  submitCount(id: number, closingCash: number, notes?: string): Observable<string> {
+    return this.http.post<any>(`${this.base}/${id}/submit-count`, { closingCash, notes }).pipe(
+      map(r => r.message),
+      tap(() => this.currentSession.set(null))
+    );
+  }
+
+  // Owner only
+  getAllSessions(): Observable<any[]> {
+    return this.http.get<any>(this.base).pipe(map(r => r.data));
+  }
+
+  getReconciliation(id: number): Observable<any> {
+    return this.http.get<any>(`${this.base}/${id}/reconciliation`).pipe(map(r => r.data));
+  }
 }
 
 @Injectable({ providedIn: 'root' })

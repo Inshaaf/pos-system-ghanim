@@ -25,6 +25,7 @@ export interface SaleReceiptData {
 export interface LabelData {
   barcode: string;
   productName: string;
+  labelName?: string;
   retailPrice: number;
 }
 

@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface SessionRepository extends JpaRepository<Session, Long> {
     Optional<Session> findFirstByStatusOrderByOpenedAtDesc(String status);
+
+    java.util.List<Session> findAllByOrderByOpenedAtDesc();
 }

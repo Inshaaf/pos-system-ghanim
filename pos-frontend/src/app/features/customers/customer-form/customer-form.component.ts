@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+﻿import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
@@ -45,10 +45,10 @@ import { CustomerService } from '../../../core/services/customer.service';
     </mat-dialog-actions>
   `,
   styles: [`
-    h2 { padding: 16px 24px 0; color: #1a2332; font-weight: 700; }
+    h2 { padding: 16px 24px 0; color: #1b3050; font-weight: 700; }
     mat-dialog-content { padding: 8px 24px; min-width: 360px; }
     .full-width { width: 100%; }
-    .save-btn { background: #1a2332 !important; color: #fff !important; }
+    .save-btn { background: #1b3050 !important; color: #fff !important; }
   `]
 })
 export class CustomerFormComponent {
@@ -79,3 +79,5 @@ export class CustomerFormComponent {
     });
   }
 }
+
+
