@@ -69,9 +69,9 @@ export interface LabelPrintDialogData {
   `,
   styles: [`
     .label-dialog { min-width: 340px; }
-    h2 { color: #1a2332; font-weight: 700; padding: 16px 24px 0; }
+    h2 { color: #1b3050; font-weight: 700; padding: 16px 24px 0; }
     mat-dialog-content { padding: 12px 24px; }
-    .product-name { font-weight: 600; font-size: 16px; color: #1a2332; margin: 0 0 16px; }
+    .product-name { font-weight: 600; font-size: 16px; color: #1b3050; margin: 0 0 16px; }
     .barcode-preview {
       background: #f8f8f8; border: 1px solid #eee; border-radius: 8px;
       padding: 16px; text-align: center; margin-bottom: 16px;
@@ -92,7 +92,7 @@ export interface LabelPrintDialogData {
     }
     .qty-btn:hover { background: #f0f0f0; }
     .qty-val { font-weight: 700; font-size: 16px; min-width: 24px; text-align: center; }
-    .print-btn { background: #1a2332 !important; color: #fff !important; min-width: 140px; }
+    .print-btn { background: #1b3050 !important; color: #fff !important; min-width: 140px; }
     mat-dialog-actions { padding: 12px 24px 16px; }
   `]
 })
@@ -125,9 +125,11 @@ export class LabelPrintDialogComponent implements OnInit {
       this.snack.open(`Printed ${this.copies} label(s)`, '', { duration: 2000 });
       this.dialogRef.close(true);
     } catch {
-      this.snack.open('Printer offline — could not print label', 'OK', { duration: 4000 });
+      this.snack.open('Printer offline "” could not print label', 'OK', { duration: 4000 });
     } finally {
       this.printing = false;
     }
   }
 }
+
+

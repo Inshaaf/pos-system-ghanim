@@ -40,7 +40,7 @@ const IN_REASONS = [
       <mat-dialog-content>
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Amount (LKR) *</mat-label>
-          <input matInput type="number" [(ngModel)]="amount" min="1" placeholder="0.00" />
+          <input matInput type="number" [(ngModel)]="amount" min="1" placeholder="Enter amount" />
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-width">
@@ -93,12 +93,13 @@ export class CashDialogComponent {
   get isCashOut() { return this.data.type === 'OUT'; }
   reasons = this.isCashOut ? OUT_REASONS : IN_REASONS;
 
-  amount = 0;
+  amount: number | null = null;
   reason = '';
   notes = '';
   loading = false;
 
   confirm() {
+    if (!this.amount) return;
     this.loading = true;
     const obs = this.isCashOut
       ? this.cashService.cashOut(this.data.sessionId, this.amount, this.reason, this.notes)

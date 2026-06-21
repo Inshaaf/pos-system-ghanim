@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+﻿import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
@@ -43,7 +43,7 @@ import { SupplierService } from '../../../core/services/product.service';
     h2 { padding: 16px 24px 0; }
     mat-dialog-content { padding: 8px 24px; }
     .full-width { width: 100%; }
-    .save-btn { background: #1a2332 !important; color: #fff !important; }
+    .save-btn { background: #1b3050 !important; color: #fff !important; }
   `]
 })
 export class SupplierFormComponent {
@@ -66,3 +66,5 @@ export class SupplierFormComponent {
     obs.subscribe({ next: () => this.dialogRef.close(true), error: () => { this.loading = false; } });
   }
 }
+
+

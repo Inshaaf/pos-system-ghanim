@@ -69,17 +69,17 @@ import { CustomerFormComponent } from '../customer-form/customer-form.component'
 
             <ng-container matColumnDef="phone">
               <th mat-header-cell *matHeaderCellDef>Phone</th>
-              <td mat-cell *matCellDef="let c">{{ c.phone || '—' }}</td>
+              <td mat-cell *matCellDef="let c">{{ c.phone || '-' }}</td>
             </ng-container>
 
             <ng-container matColumnDef="email">
               <th mat-header-cell *matHeaderCellDef>Email</th>
-              <td mat-cell *matCellDef="let c">{{ c.email || '—' }}</td>
+              <td mat-cell *matCellDef="let c">{{ c.email || '-' }}</td>
             </ng-container>
 
             <ng-container matColumnDef="address">
               <th mat-header-cell *matHeaderCellDef>Address</th>
-              <td mat-cell *matCellDef="let c">{{ c.address || '—' }}</td>
+              <td mat-cell *matCellDef="let c">{{ c.address || '-' }}</td>
             </ng-container>
 
             @if (hasStats) {
@@ -118,9 +118,9 @@ import { CustomerFormComponent } from '../customer-form/customer-form.component'
       display: flex; justify-content: space-between; align-items: flex-start;
       margin-bottom: 20px;
     }
-    .page-title { font-size: 22px; font-weight: 700; color: #1a2332; margin: 0; }
+    .page-title { font-size: 22px; font-weight: 700; color: #1b3050; margin: 0; }
     .page-sub { color: #888; font-size: 13px; margin: 4px 0 0; }
-    .primary-btn { background: #1a2332 !important; color: #fff !important; }
+    .primary-btn { background: #1b3050 !important; color: #fff !important; }
     .search-card { margin-bottom: 16px; padding: 12px 16px; }
     .search-field { width: 100%; max-width: 400px; }
     .empty-state {
@@ -131,7 +131,7 @@ import { CustomerFormComponent } from '../customer-form/customer-form.component'
     .name-cell { display: flex; align-items: center; gap: 10px; }
     .avatar {
       width: 32px; height: 32px; border-radius: 50%;
-      background: #1a2332; color: #c9a84c;
+      background: #1b3050; color: #c9a84c;
       display: flex; align-items: center; justify-content: center;
       font-weight: 700; font-size: 14px; flex-shrink: 0;
     }
@@ -188,13 +188,17 @@ export class CustomerListComponent implements OnInit {
   }
 
   confirmDelete(customer: Customer) {
-    if (!confirm(`Delete ${customer.name}?`)) return;
-    this.customerService.delete(customer.id).subscribe({
-      next: () => {
-        this.snack.open('Customer deleted', '', { duration: 2000 });
-        this.load();
-      },
-      error: () => this.snack.open('Could not delete customer', 'OK', { duration: 3000 })
+    const ref = this.snack.open(`Delete ${customer.name}?`, 'Delete', { duration: 4000 });
+    ref.onAction().subscribe(() => {
+      this.customerService.delete(customer.id).subscribe({
+        next: () => {
+          this.snack.open('Customer deleted', '', { duration: 2000 });
+          this.load();
+        },
+        error: () => this.snack.open('Could not delete customer', 'OK', { duration: 3000 })
+      });
     });
   }
 }
+
+

@@ -155,9 +155,9 @@ import { SaleReceiptData } from '../../../../core/models/print.model';
     .discount-row { color: #c62828; }
     .grand { font-weight: 700; font-size: 14px; border-top: 1px solid #ddd; margin-top: 4px; padding-top: 4px; }
     .receipt-footer { text-align: center; margin-top: 4px; }
-    .thank-you { font-size: 13px; font-weight: 600; color: #1a2332; margin: 4px 0 6px; }
+    .thank-you { font-size: 13px; font-weight: 600; color: #1b3050; margin: 4px 0 6px; }
     .footer-line { font-size: 11.5px; color: #555; margin: 2px 0; }
-    .footer-site { font-size: 12px; color: #1a2332; font-weight: 600; margin: 2px 0; }
+    .footer-site { font-size: 12px; color: #1b3050; font-weight: 600; margin: 2px 0; }
     .receipt-actions {
       display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end;
     }
@@ -204,9 +204,11 @@ export class ReceiptDialogComponent {
       await this.printService.printReceipt(receiptData);
       this.snack.open('Receipt reprinted', '', { duration: 2000 });
     } catch {
-      this.snack.open('Printer offline — could not reprint', 'OK', { duration: 4000 });
+      this.snack.open('Printer offline "” could not reprint', 'OK', { duration: 4000 });
     } finally {
       this.reprinting = false;
     }
   }
 }
+
+

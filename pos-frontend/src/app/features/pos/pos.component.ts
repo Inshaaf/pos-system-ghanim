@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, computed, signal, HostListener, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, computed, signal, HostListener, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Subject, debounceTime, takeUntil } from 'rxjs';
 import { LayoutService } from '../../core/services/layout.service';
 import { BarcodeService } from '../../core/services/barcode.service';
 import { CommonModule } from '@angular/common';
@@ -23,6 +24,7 @@ import { CheckoutDialogComponent } from './components/checkout-dialog/checkout-d
 import { ReceiptDialogComponent } from './components/receipt-dialog/receipt-dialog.component';
 import { HoldSaleDialogComponent } from './components/hold-sale-dialog/hold-sale-dialog.component';
 import { HeldSalesDialogComponent } from './components/held-sales-dialog/held-sales-dialog.component';
+import { ReturnDialogComponent } from './components/return-dialog/return-dialog.component';
 import { OpenSessionDialogComponent } from './components/open-session-dialog/open-session-dialog.component';
 import { CashDialogComponent } from './components/cash-dialog/cash-dialog.component';
 
@@ -95,7 +97,8 @@ import { CashDialogComponent } from './components/cash-dialog/cash-dialog.compon
           @if (!loadingProducts) {
             <div class="product-grid">
               @for (product of products; track product.id) {
-                <div class="product-card" (click)="addToCart(product)">
+                <div class="product-card" [class.out-of-stock]="product.stockQuantity <= 0"
+                  (click)="addToCart(product)">
                   @if (product.badge) {
                     <div class="badge" [class]="'badge-' + product.badge.toLowerCase()">{{ product.badge }}</div>
                   }
@@ -109,11 +112,17 @@ import { CashDialogComponent } from './components/cash-dialog/cash-dialog.compon
                   <div class="product-info">
                     <div class="product-name">{{ product.name }}</div>
                     <div class="product-price">LKR {{ product.retailPrice | number:'1.0-0' }}</div>
-                    <div class="product-stock" [class.low-stock]="product.stockQuantity <= product.minStockAlert">
-                      Stock: {{ product.stockQuantity }}
-                    </div>
+                    @if (product.stockQuantity <= 0) {
+                      <div class="product-stock out-of-stock-label">Out of Stock</div>
+                    } @else {
+                      <div class="product-stock" [class.low-stock]="product.stockQuantity <= product.minStockAlert">
+                        Stock: {{ product.stockQuantity }}
+                      </div>
+                    }
                   </div>
-                  <div class="add-overlay"><mat-icon>add_shopping_cart</mat-icon></div>
+                  @if (product.stockQuantity > 0) {
+                    <div class="add-overlay"><mat-icon>add_shopping_cart</mat-icon></div>
+                  }
                 </div>
               }
               @if (products.length === 0) {
@@ -252,6 +261,10 @@ import { CashDialogComponent } from './components/cash-dialog/cash-dialog.compon
               <mat-icon>history</mat-icon>
               <span>Held Sales</span>
             </button>
+            <button class="action-btn return-btn" (click)="openReturn()" [disabled]="!session()">
+              <mat-icon>assignment_return</mat-icon>
+              <span>Return</span>
+            </button>
             @if (!session()) {
               <button class="action-btn open-session-btn" (click)="openSession()">
                 <mat-icon>play_circle_outline</mat-icon>
@@ -265,7 +278,7 @@ import { CashDialogComponent } from './components/cash-dialog/cash-dialog.compon
   `,
   styleUrls: ['./pos.component.scss']
 })
-export class PosComponent implements OnInit, AfterViewInit {
+export class PosComponent implements OnInit, AfterViewInit, OnDestroy {
   private productService = inject(ProductService);
   private categoryService = inject(CategoryService);
   private salespersonService = inject(SalespersonService);
@@ -294,6 +307,8 @@ export class PosComponent implements OnInit, AfterViewInit {
   heldCount = 0;
 
   private scanFirstCharTime = 0;
+  private searchSubject = new Subject<string>();
+  private destroy$ = new Subject<void>();
 
   subtotal = computed(() => this.cart().reduce((sum, i) => sum + (i.unitPrice * i.quantity), 0));
   totalDiscount = computed(() => this.cart().reduce((sum, i) => sum + i.itemDiscount, 0));
@@ -302,6 +317,9 @@ export class PosComponent implements OnInit, AfterViewInit {
   cartTotal = computed(() => this.itemsTotal() - this.billDiscountAmt());
 
   ngOnInit() {
+    this.searchSubject.pipe(debounceTime(300), takeUntil(this.destroy$))
+      .subscribe(() => this.loadProducts());
+
     this.loadProducts();
     this.categoryService.getAll().subscribe(cats => this.categories = cats);
     this.salespersonService.getAll().subscribe(sps => {
@@ -335,13 +353,16 @@ export class PosComponent implements OnInit, AfterViewInit {
   }
 
   onSearchInput() {
-    if (!this.scanFirstCharTime) {
-      this.scanFirstCharTime = Date.now();
-    }
+    if (!this.scanFirstCharTime) this.scanFirstCharTime = Date.now();
     if (this.searchQuery.length === 0) {
       this.scanFirstCharTime = 0;
+      this.loadProducts(); // clear immediately, no debounce needed
+    } else {
+      this.searchSubject.next(this.searchQuery); // debounced API call
     }
   }
+
+  ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
 
   onSearchKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter') {
@@ -395,9 +416,18 @@ export class PosComponent implements OnInit, AfterViewInit {
       this.openSession();
       return;
     }
+    if (product.stockQuantity <= 0) {
+      this.snack.open(`${product.name} is out of stock`, '', { duration: 2000 });
+      return;
+    }
     const items = this.cart();
     const existingIdx = items.findIndex(i => i.productId === product.id);
     if (existingIdx >= 0) {
+      const current = items[existingIdx];
+      if (current.quantity >= product.stockQuantity) {
+        this.snack.open(`Only ${product.stockQuantity} in stock`, '', { duration: 2000 });
+        return;
+      }
       this.cart.update(arr => {
         const next = [...arr];
         const item = { ...next[existingIdx], quantity: next[existingIdx].quantity + 1 };
@@ -427,7 +457,7 @@ export class PosComponent implements OnInit, AfterViewInit {
         costPrice: product.costPrice
       }]);
       if (product.stockQuantity <= product.minStockAlert) {
-        this.snack.open(`⚠ Low stock: ${product.name} (${product.stockQuantity} left)`, '', { duration: 3000 });
+        this.snack.open(`Low stock: ${product.name} (${product.stockQuantity} left)`, '', { duration: 3000 });
       }
     }
   }
@@ -438,7 +468,13 @@ export class PosComponent implements OnInit, AfterViewInit {
   changeQty(i: number, delta: number) {
     this.cart.update(arr => {
       const next = [...arr];
-      const item = { ...next[i], quantity: Math.max(0.5, next[i].quantity + delta) };
+      const cur = next[i];
+      const newQty = Math.max(0.5, cur.quantity + delta);
+      if (delta > 0 && newQty > cur.stockQuantity) {
+        this.snack.open(`Only ${cur.stockQuantity} in stock`, '', { duration: 2000 });
+        return arr;
+      }
+      const item = { ...cur, quantity: newQty };
       const gross = item.unitPrice * item.quantity;
       item.itemDiscount = Math.min(item.itemDiscount, gross);
       item.subtotal = gross - item.itemDiscount;
@@ -452,6 +488,7 @@ export class PosComponent implements OnInit, AfterViewInit {
       const next = [...arr];
       const item = { ...next[i] };
       if (item.quantity <= 0) item.quantity = 1;
+      if (item.quantity > item.stockQuantity) item.quantity = item.stockQuantity;
       const gross = item.unitPrice * item.quantity;
       item.itemDiscount = Math.min(item.itemDiscount, gross);
       item.subtotal = gross - item.itemDiscount;
@@ -515,12 +552,16 @@ export class PosComponent implements OnInit, AfterViewInit {
     });
     ref.afterClosed().subscribe(result => {
       if (result) {
+        const soldItems = this.cart();
         this.dialog.open(ReceiptDialogComponent, {
           width: '420px',
           data: result
         }).afterClosed().subscribe(() => {
+          this.products = this.products.map(p => {
+            const sold = soldItems.find(i => i.productId === p.id);
+            return sold ? { ...p, stockQuantity: Math.max(0, p.stockQuantity - sold.quantity) } : p;
+          });
           this.clearCart();
-          this.loadProducts();
           this.refreshHeldCount();
         });
       }
@@ -560,6 +601,16 @@ export class PosComponent implements OnInit, AfterViewInit {
         this.saleType = resumed.saleType;
         this.heldSaleService.delete(resumed.id).subscribe(() => this.refreshHeldCount());
       }
+    });
+  }
+
+  openReturn() {
+    if (!this.session()) return;
+    this.dialog.open(ReturnDialogComponent, {
+      width: '640px',
+      data: { sessionId: this.session()!.id, salespersonId: this.selectedSalespersonId }
+    }).afterClosed().subscribe(result => {
+      if (result) this.snack.open('Return processed successfully', '', { duration: 2500 });
     });
   }
 

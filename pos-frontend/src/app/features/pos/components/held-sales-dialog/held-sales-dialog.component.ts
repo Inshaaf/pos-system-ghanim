@@ -24,8 +24,8 @@ import { HeldSale } from '../../../../core/models/sale.model';
             <div class="held-info">
               <div class="held-note">{{ sale.note || 'No note' }}</div>
               <div class="held-meta">
-                {{ sale.saleType }} • {{ sale.createdAt | date:'HH:mm' }}
-                @if (sale.customerName) { • {{ sale.customerName }} }
+                {{ sale.saleType }} · {{ sale.createdAt | date:'HH:mm' }}
+                @if (sale.customerName) { · {{ sale.customerName }} }
               </div>
             </div>
             <button mat-stroked-button class="resume-btn" (click)="resume(sale)">Resume</button>
@@ -48,7 +48,7 @@ import { HeldSale } from '../../../../core/models/sale.model';
     }
     .held-note { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
     .held-meta { font-size: 12px; color: #888; }
-    .resume-btn { color: #1a2332 !important; border-color: #1a2332 !important; }
+    .resume-btn { color: #1b3050 !important; border-color: #1b3050 !important; }
   `]
 })
 export class HeldSalesDialogComponent implements OnInit {
@@ -68,3 +68,5 @@ export class HeldSalesDialogComponent implements OnInit {
 
   resume(sale: HeldSale) { this.dialogRef.close(sale); }
 }
+
+

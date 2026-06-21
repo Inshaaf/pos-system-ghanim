@@ -56,14 +56,14 @@ import { AuthService } from '../../../core/services/auth.service';
           </button>
         </form>
 
-        <p class="footer-text">© {{ year }} Ghanim Enterprises — Badulla, Sri Lanka</p>
+        <p class="footer-text">(c) {{ year }} Ghanim Enterprises "” Badulla, Sri Lanka</p>
       </mat-card>
     </div>
   `,
   styles: [`
     .login-page {
       min-height: 100vh;
-      background: #1a2332;
+      background: #1b3050;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -79,10 +79,10 @@ import { AuthService } from '../../../core/services/auth.service';
       background: #c9a84c;
       border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-size: 32px; font-weight: 700; color: #1a2332;
+      font-size: 32px; font-weight: 700; color: #1b3050;
       margin: 0 auto 14px;
     }
-    .brand-name { font-size: 16px; font-weight: 700; color: #1a2332; letter-spacing: 1px; }
+    .brand-name { font-size: 16px; font-weight: 700; color: #1b3050; letter-spacing: 1px; }
     .subtitle { color: #777; font-size: 13px; margin-top: 4px; }
     .login-form { display: flex; flex-direction: column; gap: 4px; }
     .full-width { width: 100%; }
@@ -93,7 +93,7 @@ import { AuthService } from '../../../core/services/auth.service';
     }
     .login-btn {
       width: 100%; height: 46px; margin-top: 8px;
-      background: #1a2332 !important; color: #fff !important;
+      background: #1b3050 !important; color: #fff !important;
       font-size: 15px; font-weight: 600; border-radius: 8px !important;
       display: flex; align-items: center; justify-content: center;
     }
@@ -126,3 +126,5 @@ export class LoginComponent {
     });
   }
 }
+
+

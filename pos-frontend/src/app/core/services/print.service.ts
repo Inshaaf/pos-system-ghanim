@@ -314,20 +314,55 @@ export class PrintService {
   async printLabel(label: LabelData, copies: number = 1): Promise<void> {
     await this.ensureConnected();
 
-    const name = label.productName.length > 20
-      ? label.productName.substring(0, 20)
-      : label.productName;
+    // 38×25 mm at 203 DPI = 304×200 dots
+    const W = 304;
 
+    // Display name: prefer labelName, else truncate to 30 chars
+    const displayName = (label.labelName || label.productName).substring(0, 30);
+
+    // Code-128 (auto) — avoids 128C compatibility issues on XP-365B
+    // modules ≈ (dataLen + 3) × 11 + 2
+    const modules = (label.barcode.length + 3) * 11 + 2;
+    // Scale narrow bar to ~88% of label width (narrow=1 for 12-char, narrow=2 for ≤9-char)
+    const narrow = Math.max(1, Math.floor((W * 0.88) / modules));
+    const barcodeWidth = modules * narrow;
+    const barcodeX = Math.max(0, Math.floor((W - barcodeWidth) / 2));
+
+    // Helper: center text — Font 1 = 8 dots/char at 1×, 16 dots/char at 2×
+    const cx = (len: number, mag = 1) => Math.max(0, Math.floor((W - len * 8 * mag) / 2));
+
+    const storeName   = 'GHANIM ENTERPRISES';
+    const footerLabel = 'shop online:';
+    const footerUrl   = 'www.ghanimenterprises.lk';
+    const priceStr    = `Rs ${label.retailPrice.toLocaleString()}`;
+
+    // Bold = double-print with 1-dot x-offset (TSPL has no native bold for Font 1)
+    const bold = (x: number, y: number, text: string) => [
+      `TEXT ${x},${y},"1",0,1,1,"${text}"`,
+      `TEXT ${x + 1},${y},"1",0,1,1,"${text}"`
+    ];
+
+    // Layout — Y=5 → Y=180 (~87.5% of 200-dot height)
+    // Y=5:   store name     BOLD (1×1, h=12)           → ends Y=17
+    // Y=22:  barcode bars        (h=65, readable=0)    → ends Y=87
+    // Y=91:  barcode number      (1×1, h=12)            → ends Y=103
+    // Y=113: product name        (1×1, h=12, centered)  → ends Y=125
+    // Y=134: price "Rs …"        (2×wide 1×tall, h=12)  → ends Y=146
+    // Y=153: "shop online:" BOLD (1×1, h=12)            → ends Y=165
+    // Y=168: URL             BOLD(1×1, h=12)             → ends Y=180
     const tspl = [
       'SIZE 38 mm, 25 mm',
       'GAP 3 mm, 0 mm',
       'DENSITY 8',
       'SPEED 4',
       'CLS',
-      'TEXT 5,3,"1",0,1,1,"GHANIM ENTERPRISES"',
-      `BARCODE 5,20,"128",45,1,0,2,2,"${label.barcode}"`,
-      `TEXT 5,75,"1",0,1,1,"${name}"`,
-      `TEXT 5,90,"1",0,1,1,"LKR ${label.retailPrice.toLocaleString()}"`,
+      ...bold(cx(storeName.length), 5, storeName),
+      `BARCODE ${barcodeX},22,"128",65,0,0,${narrow},${narrow},"${label.barcode}"`,
+      `TEXT ${cx(label.barcode.length)},91,"1",0,1,1,"${label.barcode}"`,
+      `TEXT ${cx(displayName.length)},113,"1",0,1,1,"${displayName}"`,
+      `TEXT ${cx(priceStr.length, 2)},134,"1",0,2,1,"${priceStr}"`,
+      ...bold(cx(footerLabel.length), 153, footerLabel),
+      ...bold(cx(footerUrl.length), 168, footerUrl),
       `PRINT ${copies}`,
       ''
     ].join('\r\n');
@@ -369,7 +404,7 @@ export class PrintService {
   }
 
   async testLabel(): Promise<void> {
-    await this.printLabel({ barcode: 'GH0000000000', productName: 'Test Product', retailPrice: 100 }, 1);
+    await this.printLabel({ barcode: 'GH0123456789', productName: 'Test Product 38mm', retailPrice: 1500 }, 1);
   }
 
   // ── Bluetooth fallback ────────────────────────────

@@ -1,5 +1,6 @@
 package com.ghanim.pos.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -18,6 +19,7 @@ public class StockAdjustment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id")
+    @JsonIgnoreProperties({"stockLocations", "category", "supplier", "hibernateLazyInitializer", "handler"})
     private Product product;
 
     @Column(nullable = false)

@@ -9,12 +9,10 @@ import java.util.List;
 
 @Data
 public class ReturnRequest {
-    @NotNull
-    private Long originalSaleId;
+    private Long originalSaleId;   // null for direct returns
     @NotNull
     private Long sessionId;
-    @NotNull
-    private Long salespersonId;
+    private Long salespersonId;    // optional
     @NotNull
     private String returnType; // CASH_REFUND, EXCHANGE
     @NotEmpty

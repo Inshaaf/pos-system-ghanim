@@ -10,6 +10,7 @@ public class ProductResponse {
     private Long id;
     private String name;
     private String description;
+    private String shopCode;
     private String barcode;
     private Long categoryId;
     private String categoryName;
@@ -37,6 +38,7 @@ public class ProductResponse {
         r.id = p.getId();
         r.name = p.getName();
         r.description = p.getDescription();
+        r.shopCode = p.getShopCode();
         r.barcode = p.getBarcode();
         r.categoryId = p.getCategory() != null ? p.getCategory().getId() : null;
         r.categoryName = p.getCategory() != null ? p.getCategory().getName() : null;

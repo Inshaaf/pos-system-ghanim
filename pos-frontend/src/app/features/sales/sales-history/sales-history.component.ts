@@ -60,7 +60,7 @@ import { SaleDetailDialogComponent } from '../sale-detail-dialog/sale-detail-dia
   styles: [`
     .page-container { padding: 24px; }
     .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
-    .page-title { font-size: 22px; font-weight: 700; color: #1a2332; margin: 0; }
+    .page-title { font-size: 22px; font-weight: 700; color: #1b3050; margin: 0; }
     .page-sub { color: #888; font-size: 13px; margin: 4px 0 0; }
     .header-actions { display: flex; gap: 12px; align-items: center; }
     .date-input { border: 1px solid #ddd; border-radius: 6px; padding: 8px 12px; font-family: 'Inter', sans-serif; font-size: 14px; }
@@ -71,7 +71,7 @@ import { SaleDetailDialogComponent } from '../sale-detail-dialog/sale-detail-dia
       cursor: pointer; transition: background 0.1s;
     }
     .sale-row:hover { background: #f9f9f9; }
-    .sale-id { font-weight: 700; color: #1a2332; min-width: 50px; }
+    .sale-id { font-weight: 700; color: #1b3050; min-width: 50px; }
     .sale-info { flex: 1; display: flex; gap: 8px; align-items: center; font-size: 13px; color: #555; }
     .sale-type { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
     .sale-type.retail { background: #e3f2fd; color: #1565c0; }
@@ -119,3 +119,5 @@ export class SalesHistoryComponent implements OnInit {
     });
   }
 }
+
+

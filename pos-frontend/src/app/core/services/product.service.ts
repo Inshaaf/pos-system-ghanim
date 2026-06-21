@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { map } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Category, Product, Salesperson, Supplier } from '../models/product.model';
+import { Category, Product, Salesperson, Supplier, type TempWorker } from '../models/product.model';
 
 @Injectable({ providedIn: 'root' })
 export class ProductService {
@@ -37,6 +37,12 @@ export class ProductService {
   delete(id: number): Observable<void> {
     return this.http.delete<any>(`${this.base}/${id}`);
   }
+
+  uploadImage(file: File): Observable<string> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<any>(`${environment.apiUrl}/upload`, form).pipe(map(r => r.data.url));
+  }
 }
 
 @Injectable({ providedIn: 'root' })
@@ -67,6 +73,14 @@ export class SupplierService {
   update(id: number, supplier: Partial<Supplier>): Observable<Supplier> {
     return this.http.put<any>(`${environment.apiUrl}/suppliers/${id}`, supplier).pipe(map(r => r.data));
   }
+
+  getProducts(supplierId: number): Observable<Product[]> {
+    return this.http.get<any>(`${environment.apiUrl}/suppliers/${supplierId}/products`).pipe(map(r => r.data));
+  }
+
+  receiveGoods(supplierId: number, items: { productId: number; quantity: number; unitCost: number }[]): Observable<Supplier> {
+    return this.http.post<any>(`${environment.apiUrl}/suppliers/${supplierId}/receive`, { items }).pipe(map(r => r.data));
+  }
 }
 
 @Injectable({ providedIn: 'root' })
@@ -83,5 +97,22 @@ export class SalespersonService {
 
   update(id: number, name: string, active: boolean): Observable<Salesperson> {
     return this.http.put<any>(`${environment.apiUrl}/salespersons/${id}`, { name, active }).pipe(map(r => r.data));
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class TempWorkerService {
+  constructor(private http: HttpClient) {}
+
+  getAll(): Observable<TempWorker[]> {
+    return this.http.get<any>(`${environment.apiUrl}/temp-workers`).pipe(map(r => r.data));
+  }
+
+  create(name: string): Observable<TempWorker> {
+    return this.http.post<any>(`${environment.apiUrl}/temp-workers`, { name }).pipe(map(r => r.data));
+  }
+
+  update(id: number, name: string, active: boolean): Observable<TempWorker> {
+    return this.http.put<any>(`${environment.apiUrl}/temp-workers/${id}`, { name, active }).pipe(map(r => r.data));
   }
 }

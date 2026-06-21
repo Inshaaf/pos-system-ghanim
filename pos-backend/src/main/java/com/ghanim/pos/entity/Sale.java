@@ -61,6 +61,9 @@ public class Sale {
     @Column(nullable = false)
     private String status = "COMPLETED";
 
+    private String cancelReason;
+    private LocalDateTime cancelledAt;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 
