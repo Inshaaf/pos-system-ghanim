@@ -10,6 +10,7 @@ dist/
 # Environment files
 src/environments/environment*.ts
 !src/environments/environment.ts
+!src/environments/environment.prod.ts
 .env
 .env.*
 
