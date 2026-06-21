@@ -18,7 +18,7 @@ import { AuthService } from '../../../../core/services/auth.service';
     <mat-dialog-content>
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Cashier Name</mat-label>
-        <input matInput [(ngModel)]="cashierName" />
+        <input matInput [(ngModel)]="cashierName" placeholder="Enter cashier name" />
       </mat-form-field>
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Opening Float (LKR)</mat-label>
@@ -37,10 +37,14 @@ import { AuthService } from '../../../../core/services/auth.service';
   `,
   styles: [`
     h2 { padding: 16px 24px 0; }
-    mat-dialog-content { padding: 8px 24px 0; min-width: 340px; }
+    mat-dialog-content { padding: 8px 24px 0; min-width: 340px; overflow: visible !important; }
     .full-width { width: 100%; }
     .error-msg { background: #fdecea; color: #c62828; padding: 8px 12px; border-radius: 6px; font-size: 13px; }
     .open-btn { background: #1b3050 !important; color: #fff !important; }
+    :host ::ng-deep .mat-mdc-floating-label { color: rgba(0,0,0,0.6) !important; overflow: visible !important; }
+    :host ::ng-deep .mat-mdc-form-field.mat-focused .mat-mdc-floating-label { color: #1b3050 !important; }
+    :host ::ng-deep .mdc-notched-outline__notch { border-top: none !important; overflow: visible !important; }
+    :host ::ng-deep .mdc-text-field--outlined .mdc-floating-label { overflow: visible !important; }
   `]
 })
 export class OpenSessionDialogComponent {
@@ -48,7 +52,7 @@ export class OpenSessionDialogComponent {
   private sessionService = inject(SessionService);
   auth = inject(AuthService);
 
-  cashierName = this.auth.currentUser()?.name || '';
+  cashierName = '';
   openingFloat: number | null = null;
   loading = false;
   error = '';

@@ -21,6 +21,7 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final SupplierRepository supplierRepository;
     private final StockLocationRepository stockLocationRepository;
+    private final EcommerceSyncService ecommerceSyncService;
 
     @Transactional(readOnly = true)
     public List<ProductResponse> getPosProducts(String search, Long categoryId) {
@@ -92,6 +93,7 @@ public class ProductService {
                 .quantity(initial)
                 .build());
 
+        ecommerceSyncService.sync(product, initial);
         return toResponse(product);
     }
 
@@ -124,7 +126,13 @@ public class ProductService {
             product.setSupplier(supplierRepository.findById(request.getSupplierId()).orElse(null));
         }
 
-        return toResponse(productRepository.save(product));
+        Product saved = productRepository.save(product);
+        BigDecimal shopStock = stockLocationRepository
+                .findByProductIdAndLocation(saved.getId(), "SHOP")
+                .map(StockLocation::getQuantity)
+                .orElse(BigDecimal.ZERO);
+        ecommerceSyncService.sync(saved, shopStock);
+        return toResponse(saved);
     }
 
     public void delete(Long id) {

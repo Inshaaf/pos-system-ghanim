@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -99,13 +99,13 @@ import { SaleReceiptData } from '../../../../core/models/print.model';
       </div>
 
       <div class="receipt-actions no-print">
-        <button mat-stroked-button (click)="reprint()" [disabled]="reprinting">
-          @if (reprinting) { <mat-spinner diameter="16" /> }
-          @else { <mat-icon>print</mat-icon> }
-          REPRINT
-        </button>
         <button mat-stroked-button (click)="dialogRef.close()">
           <mat-icon>close</mat-icon> CLOSE
+        </button>
+        <button mat-stroked-button (click)="printReceipt()" [disabled]="printing">
+          @if (printing) { <mat-spinner diameter="16" /> }
+          @else { <mat-icon>print</mat-icon> }
+          PRINT RECEIPT
         </button>
         <button mat-flat-button class="new-sale-btn" (click)="dialogRef.close('new')">
           <mat-icon>add_shopping_cart</mat-icon> NEW SALE
@@ -164,13 +164,19 @@ import { SaleReceiptData } from '../../../../core/models/print.model';
     .new-sale-btn { background: #2e7d32 !important; color: #fff !important; }
   `]
 })
-export class ReceiptDialogComponent {
+export class ReceiptDialogComponent implements OnInit {
   dialogRef = inject(MatDialogRef<ReceiptDialogComponent>);
   data: any = inject(MAT_DIALOG_DATA);
   private printService = inject(PrintService);
   private snack = inject(MatSnackBar);
 
-  reprinting = false;
+  printing = false;
+
+  ngOnInit() {
+    if (this.data._autoPrint) {
+      this.printReceipt();
+    }
+  }
 
   // Use frontend-enriched values when available, fall back to backend values
   get items(): any[] { return this.data._items ?? this.data.receipt?.items ?? []; }
@@ -179,8 +185,8 @@ export class ReceiptDialogComponent {
   get finalTotal(): number { return this.data._total ?? this.data.total; }
   get changeAmount(): number { return this.data._changeAmount ?? this.data.changeAmount ?? 0; }
 
-  async reprint() {
-    this.reprinting = true;
+  async printReceipt() {
+    this.printing = true;
     try {
       const receiptData: SaleReceiptData = {
         saleId: this.data.saleId,
@@ -202,11 +208,11 @@ export class ReceiptDialogComponent {
         changeAmount: this.changeAmount
       };
       await this.printService.printReceipt(receiptData);
-      this.snack.open('Receipt reprinted', '', { duration: 2000 });
+      this.snack.open('Receipt printed', '', { duration: 2000 });
     } catch {
       this.snack.open('Printer offline "” could not reprint', 'OK', { duration: 4000 });
     } finally {
-      this.reprinting = false;
+      this.printing = false;
     }
   }
 }

@@ -56,6 +56,10 @@ export class CategoryService {
   create(name: string): Observable<Category> {
     return this.http.post<any>(`${environment.apiUrl}/categories`, { name }).pipe(map(r => r.data));
   }
+
+  updateSlug(id: number, ecommerceSlug: string): Observable<Category> {
+    return this.http.patch<any>(`${environment.apiUrl}/categories/${id}/slug`, { ecommerceSlug }).pipe(map(r => r.data));
+  }
 }
 
 @Injectable({ providedIn: 'root' })

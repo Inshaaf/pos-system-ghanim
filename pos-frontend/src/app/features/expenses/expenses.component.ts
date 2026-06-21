@@ -134,37 +134,6 @@ import { Supplier, Salesperson, type TempWorker } from '../../core/models/produc
               </div>
             </mat-card>
 
-            <!-- Day Salary Worker -->
-            <mat-card class="section-card">
-              <h3 class="section-title">
-                <mat-icon>engineering</mat-icon> Day Salary Worker
-              </h3>
-              <div class="form-grid">
-                <div class="field-wrap">
-                  <label class="field-label">Worker</label>
-                  <select class="styled-select" [(ngModel)]="tw.workerId">
-                    <option [value]="undefined">Select worker...</option>
-                    @for (w of tempWorkers; track w.id) {
-                      <option [value]="w.id">{{ w.name }}</option>
-                    }
-                  </select>
-                </div>
-                <div class="field-wrap">
-                  <label class="field-label">Daily Wage (Rs)</label>
-                  <input class="styled-input" type="number" [(ngModel)]="tw.amount" placeholder="1500" />
-                </div>
-                <div class="field-wrap">
-                  <label class="field-label">Note (optional)</label>
-                  <input class="styled-input" [(ngModel)]="tw.note" placeholder="Task description..." />
-                </div>
-              </div>
-              <div class="card-actions">
-                <button mat-flat-button class="submit-btn" (click)="addDaySalaryWorker()"
-                  [disabled]="!tw.workerId || !tw.amount || tw.amount <= 0">
-                  <mat-icon>add</mat-icon> Add Day Salary
-                </button>
-              </div>
-            </mat-card>
 
             <!-- Salary -->
             <mat-card class="section-card">

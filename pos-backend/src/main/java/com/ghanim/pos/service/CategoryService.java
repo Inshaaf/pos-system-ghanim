@@ -29,4 +29,11 @@ public class CategoryService {
         category.setName(name);
         return categoryRepository.save(category);
     }
+
+    public Category updateSlug(Long id, String slug) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
+        category.setEcommerceSlug(slug == null || slug.isBlank() ? null : slug.trim());
+        return categoryRepository.save(category);
+    }
 }

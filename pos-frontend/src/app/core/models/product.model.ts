@@ -30,6 +30,7 @@ export interface Category {
   id: number;
   name: string;
   active: boolean;
+  ecommerceSlug?: string;
 }
 
 export interface Supplier {

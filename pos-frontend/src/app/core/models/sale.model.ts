@@ -31,7 +31,7 @@ export interface CheckoutRequest {
     itemDiscountPct: number;
   }[];
   cartDiscountPct: number;
-  paymentMethod: 'CASH' | 'CARD' | 'CREDIT';
+  paymentMethod: 'CASH' | 'TRANSFER' | 'CREDIT';
   cashTendered?: number;
   notes?: string;
 }
