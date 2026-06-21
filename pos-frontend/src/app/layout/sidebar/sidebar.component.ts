@@ -1,9 +1,10 @@
 ﻿import { Component, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '../../core/services/auth.service';
 import { LayoutService } from '../../core/services/layout.service';
+import { SessionService } from '../../core/services/session.service';
 import { CommonModule } from '@angular/common';
 
 interface NavItem {
@@ -52,14 +53,14 @@ interface NavItem {
               <div class="user-role">{{ auth.currentUser()?.role === 'OWNER' ? 'Administrator' : 'Cashier' }}</div>
             </div>
           </div>
-          <button class="logout-btn" (click)="auth.logout()">
+          <button class="logout-btn" (click)="handleLogout()">
             <mat-icon>logout</mat-icon> Logout
           </button>
         } @else {
           <div class="user-avatar centered" [matTooltip]="auth.currentUser()?.name || ''" matTooltipPosition="right">
             {{ auth.currentUser()?.name?.charAt(0) }}
           </div>
-          <button class="logout-btn-icon" (click)="auth.logout()" matTooltip="Logout" matTooltipPosition="right">
+          <button class="logout-btn-icon" (click)="handleLogout()" matTooltip="Logout" matTooltipPosition="right">
             <mat-icon>logout</mat-icon>
           </button>
         }
@@ -169,6 +170,8 @@ interface NavItem {
 export class SidebarComponent {
   auth = inject(AuthService);
   layout = inject(LayoutService);
+  private session = inject(SessionService);
+  private router = inject(Router);
 
   private navItems: NavItem[] = [
     { label: 'POS',          icon: 'point_of_sale',         route: '/pos' },
@@ -182,12 +185,20 @@ export class SidebarComponent {
     { label: 'Close Till',   icon: 'point_of_sale',          route: '/close-till' },
     { label: 'Cash Recon',   icon: 'account_balance_wallet', route: '/cash-reconciliation', ownerOnly: true },
     { label: 'Reports',      icon: 'bar_chart',              route: '/reports', ownerOnly: true },
-    { label: 'Expenses',     icon: 'account_balance_wallet', route: '/expenses', ownerOnly: true },
+    { label: 'Expenses',     icon: 'account_balance_wallet', route: '/expenses' },
     { label: 'Settings',     icon: 'settings',               route: '/settings', ownerOnly: true },
   ];
 
   get visibleItems(): NavItem[] {
     return this.navItems.filter(i => !i.ownerOnly || this.auth.isOwner());
+  }
+
+  handleLogout() {
+    if (!this.auth.isOwner() && this.session.currentSession()) {
+      this.router.navigate(['/close-till']);
+      return;
+    }
+    this.auth.logout();
   }
 }
 

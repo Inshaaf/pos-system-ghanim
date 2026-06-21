@@ -17,7 +17,7 @@ export interface SaleReceiptData {
   itemDiscount: number;
   cartDiscount: number;
   total: number;
-  paymentMethod: 'CASH' | 'CARD' | 'CREDIT';
+  paymentMethod: 'CASH' | 'TRANSFER' | 'CREDIT';
   cashTendered?: number;
   changeAmount?: number;
 }

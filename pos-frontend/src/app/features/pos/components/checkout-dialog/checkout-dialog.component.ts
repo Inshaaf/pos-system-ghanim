@@ -12,8 +12,6 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { SaleService } from '../../../../core/services/sale.service';
 import { CartItem } from '../../../../core/models/sale.model';
-import { PrintService } from '../../../../core/services/print.service';
-import { SaleReceiptData } from '../../../../core/models/print.model';
 import { Salesperson } from '../../../../core/models/product.model';
 import { CustomerService } from '../../../../core/services/customer.service';
 import { Customer } from '../../../../core/models/customer.model';
@@ -157,10 +155,14 @@ import { Customer } from '../../../../core/models/customer.model';
       </mat-dialog-content>
 
       <mat-dialog-actions align="end">
-        <button mat-button (click)="dialogRef.close()">CANCEL</button>
-        <button mat-flat-button class="confirm-btn" (click)="confirm()" [disabled]="confirmDisabled">
+        <button mat-button (click)="dialogRef.close()" [disabled]="loading">CANCEL</button>
+        <button mat-stroked-button class="confirm-only-btn" (click)="confirm(false)" [disabled]="confirmDisabled">
           @if (loading) { <mat-spinner diameter="18" /> }
-          @else { CONFIRM SALE }
+          @else { CONFIRM ONLY }
+        </button>
+        <button mat-flat-button class="confirm-print-btn" (click)="confirm(true)" [disabled]="confirmDisabled">
+          @if (loading) { <mat-spinner diameter="18" /> }
+          @else { <mat-icon>print</mat-icon> CONFIRM + PRINT }
         </button>
       </mat-dialog-actions>
     </div>
@@ -213,8 +215,10 @@ import { Customer } from '../../../../core/models/customer.model';
     .hint-ok { color: #2e7d32 !important; font-size: 11px; }
     .full-width { width: 100%; }
     .mt-10 { margin-top: 10px; }
-    .confirm-btn { background: #2e7d32 !important; color: #fff !important; min-width: 140px; }
-    mat-dialog-actions { padding: 12px 24px 16px; }
+    .confirm-only-btn { min-width: 130px; color: #1b3050 !important; border-color: #1b3050 !important; }
+    .confirm-print-btn { background: #2e7d32 !important; color: #fff !important; min-width: 150px; }
+    .confirm-print-btn mat-icon { font-size: 16px; width: 16px; height: 16px; margin-right: 4px; }
+    mat-dialog-actions { padding: 12px 24px 16px; gap: 8px; }
   `]
 })
 export class CheckoutDialogComponent implements OnInit {
@@ -225,11 +229,10 @@ export class CheckoutDialogComponent implements OnInit {
     salespersonId: number; salespersons: Salesperson[]; saleType: string;
   } = inject(MAT_DIALOG_DATA);
   private saleService = inject(SaleService);
-  private printService = inject(PrintService);
   private customerService = inject(CustomerService);
 
   total = 0;
-  paymentMethod: 'CASH' | 'CARD' | 'CREDIT' = 'CASH';
+  paymentMethod: 'CASH' | 'TRANSFER' | 'CREDIT' = 'CASH';
   cashTendered = 0;
   change = 0;
   customerName = '';
@@ -254,10 +257,10 @@ export class CheckoutDialogComponent implements OnInit {
     return false;
   }
 
-  methods: { value: 'CASH' | 'CARD' | 'CREDIT'; label: string; icon: string }[] = [
-    { value: 'CASH',   label: 'Cash',   icon: 'payments' },
-    { value: 'CARD',   label: 'Card',   icon: 'credit_card' },
-    { value: 'CREDIT', label: 'Credit', icon: 'account_balance' }
+  methods: { value: 'CASH' | 'TRANSFER' | 'CREDIT'; label: string; icon: string }[] = [
+    { value: 'CASH',     label: 'Cash',     icon: 'payments' },
+    { value: 'TRANSFER', label: 'Transfer', icon: 'phone_android' },
+    { value: 'CREDIT',   label: 'Credit',   icon: 'account_balance' }
   ];
 
   ngOnInit() {
@@ -304,7 +307,7 @@ export class CheckoutDialogComponent implements OnInit {
     this.calcChange();
   }
 
-  confirm() {
+  confirm(print: boolean) {
     this.loading = true;
     const req = {
       sessionId: this.data.sessionId,
@@ -327,11 +330,9 @@ export class CheckoutDialogComponent implements OnInit {
 
     this.saleService.checkout(req as any).subscribe({
       next: result => {
-        if (localStorage.getItem('pos_auto_print') !== 'false') {
-          this.autoPrint(result);
-        }
         this.dialogRef.close({
           ...result,
+          _autoPrint: print,
           _itemDiscount: this.data.totalDiscount,
           _billDiscount: this.data.billDiscount,
           _netSubtotal: this.data.subtotal - this.data.totalDiscount,
@@ -350,27 +351,6 @@ export class CheckoutDialogComponent implements OnInit {
     });
   }
 
-  private autoPrint(result: any): void {
-    const receiptData: SaleReceiptData = {
-      saleId: result.saleId,
-      date: result.receipt?.date ?? new Date().toISOString(),
-      salespersonName: result.receipt?.salesperson ?? '',
-      saleType: this.data.saleType as 'RETAIL' | 'WHOLESALE',
-      customerName: this.selectedCustomer?.name || this.customerName || undefined,
-      items: this.data.cart.map(i => ({
-        name: i.productName, quantity: i.quantity,
-        unitPrice: i.unitPrice, discount: i.itemDiscount, subtotal: i.subtotal
-      })),
-      subtotal: this.data.subtotal,
-      itemDiscount: this.data.totalDiscount,
-      cartDiscount: this.data.billDiscount,
-      total: this.total,
-      paymentMethod: this.paymentMethod,
-      cashTendered: this.paymentMethod === 'CASH' ? this.cashTendered : undefined,
-      changeAmount: this.paymentMethod === 'CASH' ? this.change : undefined
-    };
-    this.printService.printReceipt(receiptData).catch(() => {});
-  }
 }
 
 

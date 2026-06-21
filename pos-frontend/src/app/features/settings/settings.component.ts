@@ -258,9 +258,31 @@ import { PrintService } from '../../core/services/print.service';
       <!-- Categories -->
       <mat-card class="settings-card">
         <h3 class="section-title">Categories</h3>
+        <p class="cat-hint">Set the ecommerce slug for each category so products sync to the online store correctly.</p>
         <div class="sp-list">
           @for (cat of categories; track cat.id) {
-            <div class="sp-item"><span>{{ cat.name }}</span></div>
+            <div class="cat-item">
+              <span class="sp-name">{{ cat.name }}</span>
+              @if (editingSlugId === cat.id) {
+                <input class="add-input slug-input" [(ngModel)]="editingSlug"
+                  placeholder="e.g. plastic" (keydown.enter)="saveSlug(cat)" />
+                <button class="icon-action-btn save" (click)="saveSlug(cat)" title="Save">
+                  <mat-icon>check</mat-icon>
+                </button>
+                <button class="icon-action-btn cancel" (click)="cancelSlugEdit()" title="Cancel">
+                  <mat-icon>close</mat-icon>
+                </button>
+              } @else {
+                @if (cat.ecommerceSlug) {
+                  <span class="slug-chip linked">{{ cat.ecommerceSlug }}</span>
+                } @else {
+                  <span class="slug-chip unlinked">no slug</span>
+                }
+                <button class="icon-action-btn edit" (click)="startSlugEdit(cat)" title="Set slug">
+                  <mat-icon>edit</mat-icon>
+                </button>
+              }
+            </div>
           }
         </div>
         <div class="add-row">
@@ -374,6 +396,20 @@ import { PrintService } from '../../core/services/print.service';
     .cashier-label { font-size: 14px; font-weight: 600; color: #1b3050; }
     .cashier-hint { font-size: 12px; color: #6b7280; }
     .paper-select { width: 110px; font-size: 14px; }
+
+    /* Category slug */
+    .cat-hint { font-size: 12px; color: #6b7280; margin: -6px 0 12px; }
+    .cat-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 0; border-bottom: 1px solid #eef0f4;
+    }
+    .slug-input { max-width: 160px; flex: none !important; }
+    .slug-chip {
+      font-size: 11px; font-weight: 600; padding: 2px 10px;
+      border-radius: 10px; white-space: nowrap;
+    }
+    .slug-chip.linked { background: #e3f2fd; color: #1565c0; }
+    .slug-chip.unlinked { background: #f4f6f9; color: #9ca3af; font-style: italic; }
   `]
 })
 export class SettingsComponent implements OnInit {
@@ -393,6 +429,10 @@ export class SettingsComponent implements OnInit {
   // Salesperson edit state
   editingSpId: number | null = null;
   editingSpName = '';
+
+  // Category slug edit state
+  editingSlugId: number | null = null;
+  editingSlug = '';
 
   // Day Salary Worker edit state
   editingTwId: number | null = null;
@@ -666,6 +706,24 @@ export class SettingsComponent implements OnInit {
       this.newCatName = '';
       this.catService.getAll().subscribe(c => this.categories = c);
       this.snack.open('Category added', '', { duration: 1500 });
+    });
+  }
+
+  startSlugEdit(cat: Category) {
+    this.editingSlugId = cat.id;
+    this.editingSlug = cat.ecommerceSlug || '';
+  }
+
+  cancelSlugEdit() {
+    this.editingSlugId = null;
+    this.editingSlug = '';
+  }
+
+  saveSlug(cat: Category) {
+    this.catService.updateSlug(cat.id, this.editingSlug.trim()).subscribe(updated => {
+      cat.ecommerceSlug = updated.ecommerceSlug;
+      this.cancelSlugEdit();
+      this.snack.open('Slug saved', '', { duration: 1500 });
     });
   }
 }

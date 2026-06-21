@@ -6,14 +6,29 @@ SPEC.md
 *.hardware_prompt
 memory/
 
-# Environment files
+# Environment & secrets — NEVER commit these
 .env
 .env.*
+application-local.properties
+application-secrets.properties
+*-local.properties
+
+# Java build output
+target/
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+
+# Maven
+.mvn/wrapper/maven-wrapper.jar
 
 # Node
 node_modules/
 npm-debug.log
 yarn-error.log
+package-lock.json
 
 # Angular build output
 dist/
@@ -22,6 +37,9 @@ dist/
 # IDE
 .vscode/
 .idea/
+*.iml
+*.iws
+*.ipr
 
 # OS
 .DS_Store

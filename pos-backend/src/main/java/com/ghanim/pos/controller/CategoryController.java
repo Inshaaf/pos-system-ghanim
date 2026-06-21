@@ -32,4 +32,10 @@ public class CategoryController {
             @PathVariable Long id, @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(ApiResponse.ok(categoryService.update(id, body.get("name"))));
     }
+
+    @PatchMapping("/{id}/slug")
+    public ResponseEntity<ApiResponse<Category>> updateSlug(
+            @PathVariable Long id, @RequestBody Map<String, String> body) {
+        return ResponseEntity.ok(ApiResponse.ok(categoryService.updateSlug(id, body.get("ecommerceSlug"))));
+    }
 }

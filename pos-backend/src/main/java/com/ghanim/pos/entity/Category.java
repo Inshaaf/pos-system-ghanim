@@ -18,6 +18,9 @@ public class Category {
     @Column(nullable = false)
     private String name;
 
+    @Column(name = "ecommerce_slug")
+    private String ecommerceSlug;
+
     private boolean active = true;
 
     @CreationTimestamp
