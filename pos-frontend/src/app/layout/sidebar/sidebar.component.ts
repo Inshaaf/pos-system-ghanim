@@ -186,7 +186,7 @@ export class SidebarComponent {
     { label: 'Cash Recon',   icon: 'account_balance_wallet', route: '/cash-reconciliation', ownerOnly: true },
     { label: 'Reports',      icon: 'bar_chart',              route: '/reports', ownerOnly: true },
     { label: 'Expenses',     icon: 'account_balance_wallet', route: '/expenses' },
-    { label: 'Settings',     icon: 'settings',               route: '/settings', ownerOnly: true },
+    { label: 'Settings',     icon: 'settings',               route: '/settings' },
   ];
 
   get visibleItems(): NavItem[] {

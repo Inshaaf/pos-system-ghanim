@@ -159,10 +159,10 @@ import { StockRequestService, StockRequest } from '../../../core/services/stock.
               <button mat-icon-button (click)="openStockAdjust(p)" [matTooltip]="isOwner ? 'Adjust Stock' : 'Request Stock Change'">
                 <mat-icon>tune</mat-icon>
               </button>
+              <button mat-icon-button (click)="printLabel(p)" matTooltip="Print Label" [disabled]="!p.barcode">
+                <mat-icon>label</mat-icon>
+              </button>
               @if (isOwner) {
-                <button mat-icon-button (click)="printLabel(p)" matTooltip="Print Label" [disabled]="!p.barcode">
-                  <mat-icon>label</mat-icon>
-                </button>
                 <button mat-icon-button (click)="deactivate(p)" matTooltip="Deactivate" *ngIf="p.active">
                   <mat-icon>block</mat-icon>
                 </button>
@@ -305,7 +305,9 @@ export class ProductListComponent implements OnInit {
       width: '380px',
       data: {
         productName: product.name,
+        labelName: product.labelName,
         barcode: product.barcode,
+        shopCode: product.shopCode,
         retailPrice: product.retailPrice
       }
     });

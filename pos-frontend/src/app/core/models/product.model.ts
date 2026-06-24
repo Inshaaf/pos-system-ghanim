@@ -3,6 +3,7 @@ export interface Product {
   name: string;
   description?: string;
   shopCode?: string;
+  labelName?: string;
   barcode?: string;
   categoryId?: number;
   categoryName?: string;
@@ -36,6 +37,7 @@ export interface Category {
 export interface Supplier {
   id: number;
   name: string;
+  code?: string;
   phone?: string;
   address?: string;
   notes?: string;

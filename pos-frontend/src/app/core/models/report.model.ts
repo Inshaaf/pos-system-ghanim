@@ -8,6 +8,8 @@ export interface DailyReport {
   totalExpenses: number;
   netProfit: number;
   margin: number;
+  quickSaleCount: number;
+  quickSaleTotal: number;
   salespersonBreakdown: SalespersonBreakdown[];
   cashSummary: CashSummary;
   paymentBreakdown: PaymentBreakdown;
@@ -74,6 +76,7 @@ export interface CashFlowDay {
 export interface CashSummary {
   openingFloat: number;
   totalCashSales: number;
+  quickSaleCash: number;
   cashIn: number;
   cashOut: number;
   expectedCash: number;

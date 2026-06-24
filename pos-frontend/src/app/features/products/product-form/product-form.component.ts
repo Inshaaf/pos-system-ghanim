@@ -11,7 +11,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatIconModule } from '@angular/material/icon';
-import { ProductService, SupplierService } from '../../../core/services/product.service';
+import { ProductService, SupplierService, AppSettingService } from '../../../core/services/product.service';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -33,6 +33,13 @@ import { AuthService } from '../../../core/services/auth.service';
             <input matInput formControlName="name" placeholder="Enter product name" />
           </mat-form-field>
         </div>
+        <div class="form-row">
+          <mat-form-field appearance="outline" floatLabel="always" class="full-width">
+            <mat-label>Label Name</mat-label>
+            <input matInput formControlName="labelName" placeholder="Short name for barcode label (optional)" />
+            <mat-hint>Printed on labels instead of the full product name</mat-hint>
+          </mat-form-field>
+        </div>
         <div class="form-row two-col">
           <mat-form-field appearance="outline">
             <mat-label>Retail Price *</mat-label>
@@ -46,21 +53,30 @@ import { AuthService } from '../../../core/services/auth.service';
         @if (auth.isOwner()) {
           <div class="form-row two-col">
             <mat-form-field appearance="outline">
-              <mat-label>Cost Price</mat-label>
-              <input matInput type="number" formControlName="costPrice" />
-            </mat-form-field>
-            <mat-form-field appearance="outline">
               <mat-label>Online Price</mat-label>
               <input matInput type="number" formControlName="onlinePrice" />
             </mat-form-field>
           </div>
         }
-        <div class="form-row two-col" style="margin-bottom: 16px">
-          <mat-form-field appearance="outline">
-            <mat-label>Shop Code</mat-label>
-            <input matInput formControlName="shopCode" placeholder="e.g. ES95" style="text-transform:uppercase" />
-            <mat-hint>Internal code used in-store (optional)</mat-hint>
-          </mat-form-field>
+        <div class="form-row" style="margin-bottom: 16px">
+          <div class="shop-code-wrap">
+            <mat-form-field appearance="outline" class="shop-code-field">
+              <mat-label>Shop Code</mat-label>
+              <input matInput formControlName="shopCode" placeholder="e.g. BAS"
+                style="text-transform:uppercase" />
+              <mat-hint>Encoded price — cost is decoded automatically on save</mat-hint>
+            </mat-form-field>
+            <button mat-icon-button type="button" class="decode-btn"
+              matTooltip="Reveal cost price" (click)="toggleDecodedCost()">
+              <mat-icon>{{ decodedCost !== null ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+          </div>
+          @if (decodedCost !== null) {
+            <div class="decoded-cost">Cost: LKR {{ decodedCost | number:'1.2-2' }}</div>
+          }
+          @if (decodeError) {
+            <div class="decoded-cost error">{{ decodeError }}</div>
+          }
         </div>
         <div class="form-row two-col">
           <div class="barcode-wrap">
@@ -110,7 +126,7 @@ import { AuthService } from '../../../core/services/auth.service';
         @if (!data.product) {
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Initial Stock</mat-label>
-            <input matInput type="number" formControlName="initialStock" />
+            <input matInput type="number" formControlName="initialStock" placeholder="0" />
           </mat-form-field>
         }
         <!-- Image section -->
@@ -204,6 +220,11 @@ import { AuthService } from '../../../core/services/auth.service';
     .img-preview.hidden { display: none; }
     .img-broken { display: flex; align-items: center; gap: 6px; color: #aaa; font-size: 12px; padding: 12px; }
     .clear-img-btn { position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,.9) !important; }
+    .shop-code-wrap { display: flex; align-items: center; gap: 6px; }
+    .shop-code-field { flex: 1; }
+    .decode-btn { height: 56px; flex-shrink: 0; color: #1b3050 !important; }
+    .decoded-cost { font-size: 13px; font-weight: 600; color: #2e7d32; padding: 4px 0 0 4px; }
+    .decoded-cost.error { color: #c62828; font-weight: 400; }
   `]
 })
 export class ProductFormComponent implements OnInit {
@@ -215,12 +236,16 @@ export class ProductFormComponent implements OnInit {
   private snack = inject(MatSnackBar);
 
   auth = inject(AuthService);
+  private appSettingService = inject(AppSettingService);
   suppliers: any[] = [];
   loading = false;
   uploading = false;
   imageMode: 'url' | 'upload' = 'url';
   previewError = false;
   p = this.data.product;
+  decodedCost: number | null = null;
+  decodeError: string | null = null;
+  private cipherKey: string | null = null;
 
   form = this.fb.group({
     name: [this.p?.name || '', Validators.required],
@@ -229,6 +254,7 @@ export class ProductFormComponent implements OnInit {
     costPrice: [this.p?.costPrice || ''],
     onlinePrice: [this.p?.onlinePrice || ''],
     shopCode: [this.p?.shopCode || ''],
+    labelName: [this.p?.labelName || ''],
     barcode: [this.p?.barcode || ''],
     unit: [this.p?.unit || 'piece'],
     categoryId: [this.p?.categoryId || null],
@@ -240,7 +266,7 @@ export class ProductFormComponent implements OnInit {
     showInPos: [this.p?.showInPos ?? true],
     showOnline: [this.p?.showOnline ?? true],
     imageUrl: [this.p?.imageUrl || ''],
-    initialStock: [0]
+    initialStock: [null]
   });
 
   ngOnInit() {
@@ -249,10 +275,10 @@ export class ProductFormComponent implements OnInit {
       if (!this.p) {
         const generalStock = s.find((x: any) => x.name.toLowerCase().includes('general stock'));
         if (generalStock) this.form.patchValue({ supplierId: generalStock.id });
+        this.generateBarcode();
       }
     });
     if (!this.p) {
-      this.generateBarcode();
       const plastic = (this.data.categories || []).find((c: any) => c.name.toLowerCase().includes('plastic'));
       if (plastic) this.form.patchValue({ categoryId: plastic.id });
     }
@@ -276,9 +302,48 @@ export class ProductFormComponent implements OnInit {
   }
 
   generateBarcode() {
-    const ts = Date.now().toString().slice(-8);
-    const rand = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    this.form.patchValue({ barcode: ts + rand });
+    const supplierId = this.form.value.supplierId;
+    const supplier = this.suppliers.find((s: any) => s.id === supplierId);
+    if (supplier?.code) {
+      this.productService.nextBarcode(supplier.code).subscribe(bc => {
+        this.form.patchValue({ barcode: bc });
+      });
+    } else {
+      const ts = Date.now().toString().slice(-8);
+      const rand = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+      this.form.patchValue({ barcode: ts + rand });
+    }
+  }
+
+  toggleDecodedCost() {
+    if (this.decodedCost !== null) { this.decodedCost = null; this.decodeError = null; return; }
+    const code = (this.form.value.shopCode || '').trim().toUpperCase();
+    if (!code) { this.decodeError = 'Enter a shop code first'; return; }
+    const reveal = (key: string) => {
+      const k = key.toUpperCase().replace(/[^A-Z]/g, '');
+      const map: Record<string, string> = {};
+      for (let i = 0; i < k.length && i < 10; i++) map[k[i]] = i < 9 ? String(i + 1) : '0';
+      let digits = '';
+      for (const c of code) {
+        if (c === 'X') continue;
+        if (map[c] === undefined) return null;
+        digits += map[c];
+      }
+      return digits ? parseFloat(digits) : null;
+    };
+    if (this.cipherKey !== null) {
+      const cost = reveal(this.cipherKey);
+      cost !== null ? (this.decodedCost = cost) : (this.decodeError = 'Invalid code for current cipher');
+    } else {
+      this.appSettingService.getCipher().subscribe({
+        next: key => {
+          this.cipherKey = key || '';
+          const cost = reveal(this.cipherKey);
+          cost !== null ? (this.decodedCost = cost) : (this.decodeError = 'Invalid code for current cipher');
+        },
+        error: () => { this.decodeError = 'Could not load cipher'; }
+      });
+    }
   }
 
   save() {

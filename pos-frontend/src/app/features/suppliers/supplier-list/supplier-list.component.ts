@@ -37,7 +37,7 @@ import { ReceiveGoodsDialogComponent } from '../receive-goods-dialog/receive-goo
       <!-- Search -->
       <mat-form-field appearance="outline" class="search-field">
         <mat-icon matPrefix>search</mat-icon>
-        <input matInput [(ngModel)]="searchText" placeholder="Search supplier by name or phone..." (ngModelChange)="applySearch()">
+        <input matInput [(ngModel)]="searchText" placeholder="Search supplier by name, code or phone..." (ngModelChange)="applySearch()">
         @if (searchText) {
           <button matSuffix mat-icon-button (click)="searchText = ''; applySearch()"><mat-icon>close</mat-icon></button>
         }
@@ -66,7 +66,10 @@ import { ReceiveGoodsDialogComponent } from '../receive-goods-dialog/receive-goo
             <div class="sc-header">
               <div class="sc-avatar">{{ s.name.charAt(0).toUpperCase() }}</div>
               <div class="sc-info">
-                <div class="sc-name">{{ s.name }}</div>
+                <div class="sc-name">
+                  {{ s.name }}
+                  @if (s.code) { <span class="sc-code">{{ s.code }}</span> }
+                </div>
                 @if (s.phone) { <div class="sc-phone"><mat-icon>phone</mat-icon>{{ s.phone }}</div> }
                 @if (s.address) { <div class="sc-addr"><mat-icon>location_on</mat-icon>{{ s.address }}</div> }
               </div>
@@ -144,7 +147,11 @@ import { ReceiveGoodsDialogComponent } from '../receive-goods-dialog/receive-goo
       font-size: 18px; font-weight: 700; flex-shrink: 0;
     }
     .sc-info { flex: 1; min-width: 0; }
-    .sc-name { font-size: 15px; font-weight: 700; color: #1b3050; }
+    .sc-name { font-size: 15px; font-weight: 700; color: #1b3050; display: flex; align-items: center; gap: 8px; }
+    .sc-code {
+      font-size: 11px; font-weight: 700; background: #e3f2fd; color: #1565c0;
+      padding: 2px 8px; border-radius: 10px; letter-spacing: 0.5px;
+    }
     .sc-phone, .sc-addr {
       display: flex; align-items: center; gap: 4px;
       font-size: 12px; color: #6b7280; margin-top: 3px;
@@ -204,7 +211,9 @@ export class SupplierListComponent implements OnInit {
     const q = this.searchText.trim().toLowerCase();
     this.filteredSuppliers = q
       ? this.suppliers.filter(s =>
-          s.name.toLowerCase().includes(q) || (s.phone || '').toLowerCase().includes(q))
+          s.name.toLowerCase().includes(q) ||
+          (s.code || '').toLowerCase().includes(q) ||
+          (s.phone || '').toLowerCase().includes(q))
       : [...this.suppliers];
   }
 

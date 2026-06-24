@@ -18,6 +18,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ProductService, CategoryService, SalespersonService } from '../../core/services/product.service';
 import { HeldSaleService } from '../../core/services/sale.service';
 import { SessionService } from '../../core/services/session.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Product, Category, Salesperson } from '../../core/models/product.model';
 import { CartItem } from '../../core/models/sale.model';
 import { CheckoutDialogComponent } from './components/checkout-dialog/checkout-dialog.component';
@@ -27,6 +28,7 @@ import { HeldSalesDialogComponent } from './components/held-sales-dialog/held-sa
 import { ReturnDialogComponent } from './components/return-dialog/return-dialog.component';
 import { OpenSessionDialogComponent } from './components/open-session-dialog/open-session-dialog.component';
 import { CashDialogComponent } from './components/cash-dialog/cash-dialog.component';
+import { QuickSaleDialogComponent } from './components/quick-sale-dialog/quick-sale-dialog.component';
 
 @Component({
   selector: 'app-pos',
@@ -35,7 +37,8 @@ import { CashDialogComponent } from './components/cash-dialog/cash-dialog.compon
     CommonModule, FormsModule,
     MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatChipsModule, MatBadgeModule, MatDialogModule,
-    MatSnackBarModule, MatTooltipModule, MatProgressSpinnerModule
+    MatSnackBarModule, MatTooltipModule, MatProgressSpinnerModule,
+    QuickSaleDialogComponent
   ],
   template: `
     <div class="pos-wrapper">
@@ -52,6 +55,7 @@ import { CashDialogComponent } from './components/cash-dialog/cash-dialog.compon
             <input #searchInput class="search-input" [(ngModel)]="searchQuery"
               (ngModelChange)="onSearchInput()"
               (keydown)="onSearchKeydown($event)"
+              (blur)="onSearchBlur()"
               placeholder="Search products by name, SKU or barcode..." />
             <kbd class="search-kbd">Ctrl + K</kbd>
             @if (searchQuery) {
@@ -62,6 +66,9 @@ import { CashDialogComponent } from './components/cash-dialog/cash-dialog.compon
           </div>
         </div>
         <div class="header-right">
+          <button class="quick-sale-header-btn" (click)="openQuickSale()">
+            <mat-icon>bolt</mat-icon> Quick Sale
+          </button>
           <button class="icon-btn"><mat-icon>qr_code_scanner</mat-icon></button>
           <button class="icon-btn notif-btn" (click)="openHeldSales()">
             <mat-icon>notifications</mat-icon>
@@ -265,7 +272,7 @@ import { CashDialogComponent } from './components/cash-dialog/cash-dialog.compon
               <mat-icon>assignment_return</mat-icon>
               <span>Return</span>
             </button>
-            @if (!session()) {
+            @if (!session() && !auth.isOwner()) {
               <button class="action-btn open-session-btn" (click)="openSession()">
                 <mat-icon>play_circle_outline</mat-icon>
                 <span>Open Session</span>
@@ -286,6 +293,7 @@ export class PosComponent implements OnInit, AfterViewInit, OnDestroy {
   private barcodeService = inject(BarcodeService);
   private heldSaleService = inject(HeldSaleService);
   private sessionService = inject(SessionService);
+  auth = inject(AuthService);
   private dialog = inject(MatDialog);
   private snack = inject(MatSnackBar);
 
@@ -327,8 +335,7 @@ export class PosComponent implements OnInit, AfterViewInit, OnDestroy {
       if (sps.length) this.selectedSalespersonId = sps[0].id;
     });
     this.sessionService.loadCurrent().subscribe(s => {
-      if (!s) {
-        // No open session — prompt cashier to enter opening float
+      if (!s && !this.auth.isOwner()) {
         setTimeout(() => this.openSession(), 300);
       } else {
         this.refreshHeldCount();
@@ -342,6 +349,18 @@ export class PosComponent implements OnInit, AfterViewInit, OnDestroy {
 
   focusSearch() {
     setTimeout(() => this.searchInputRef?.nativeElement?.focus(), 50);
+  }
+
+  onSearchBlur() {
+    if (!this.dialog.openDialogs.length) {
+      setTimeout(() => {
+        const active = document.activeElement;
+        const tag = active?.tagName?.toLowerCase();
+        // Don't steal focus if the user clicked into another input (e.g. discount field)
+        if (tag === 'input' || tag === 'textarea') return;
+        this.searchInputRef?.nativeElement?.focus();
+      }, 150);
+    }
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -612,6 +631,16 @@ export class PosComponent implements OnInit, AfterViewInit, OnDestroy {
     }).afterClosed().subscribe(result => {
       if (result) this.snack.open('Return processed successfully', '', { duration: 2500 });
     });
+  }
+
+  openQuickSale() {
+    this.dialog.open(QuickSaleDialogComponent, { width: '560px' })
+      .afterClosed().subscribe(result => {
+        if (result === 'saved') {
+          this.snack.open('Quick sale recorded', '', { duration: 2000 });
+          this.loadProducts();
+        }
+      });
   }
 
   openSession() {
