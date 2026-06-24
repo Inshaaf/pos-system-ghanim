@@ -10,9 +10,10 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSelectModule } from '@angular/material/select';
-import { SalespersonService, CategoryService, TempWorkerService } from '../../core/services/product.service';
+import { SalespersonService, CategoryService, TempWorkerService, AppSettingService } from '../../core/services/product.service';
 import { Salesperson, Category, TempWorker } from '../../core/models/product.model';
 import { PrintService } from '../../core/services/print.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-settings',
@@ -26,7 +27,8 @@ import { PrintService } from '../../core/services/print.service';
     <div class="page-container">
       <h1 class="page-title">Settings</h1>
 
-      <!-- Salespersons -->
+      <!-- Salespersons (owner only) -->
+      @if (auth.isOwner()) {
       <mat-card class="settings-card">
         <h3 class="section-title">Salespersons</h3>
         <div class="sp-list">
@@ -119,6 +121,7 @@ import { PrintService } from '../../core/services/print.service';
           </button>
         </div>
       </mat-card>
+      } <!-- end @if (auth.isOwner()) — salespersons + workers -->
 
       <!-- Printer Settings -->
       <mat-card class="settings-card">
@@ -186,6 +189,59 @@ import { PrintService } from '../../core/services/print.service';
           <div class="printer-field">
             <label class="field-label">Label Printer Name</label>
             <input class="add-input" [(ngModel)]="labelPrinterName" placeholder="XP-365B" />
+          </div>
+          <div class="printer-field">
+            <label class="field-label">Barcode Label Layout</label>
+            <div class="version-toggle">
+              <button type="button" class="ver-btn" [class.active]="labelVersion === 1" (click)="labelVersion = 1">
+                <mat-icon>crop_free</mat-icon>
+                <span>Version 1</span>
+                <span class="ver-hint">Standard (~67% width)</span>
+              </button>
+              <button type="button" class="ver-btn" [class.active]="labelVersion === 2" (click)="labelVersion = 2">
+                <mat-icon>view_column</mat-icon>
+                <span>Version 2</span>
+                <span class="ver-hint">Max width (fills label)</span>
+              </button>
+              <button type="button" class="ver-btn" [class.active]="labelVersion === 3" (click)="labelVersion = 3">
+                <mat-icon>grid_view</mat-icon>
+                <span>Version 3</span>
+                <span class="ver-hint">4-up (small items)</span>
+              </button>
+              <button type="button" class="ver-btn" [class.active]="labelVersion === 4" (click)="labelVersion = 4">
+                <mat-icon>horizontal_split</mat-icon>
+                <span>Version 4</span>
+                <span class="ver-hint">2-Up (top + bottom)</span>
+              </button>
+            </div>
+            @if (labelVersion === 4) {
+              <div class="two-up-config">
+                <div class="two-up-row">
+                  <span class="two-up-label">Top half</span>
+                  <div class="mini-ver-toggle">
+                    <button type="button" class="mini-ver-btn" [class.active]="labelTopVersion === 1" (click)="labelTopVersion = 1">V1</button>
+                    <button type="button" class="mini-ver-btn" [class.active]="labelTopVersion === 2" (click)="labelTopVersion = 2">V2</button>
+                    <button type="button" class="mini-ver-btn" [class.active]="labelTopVersion === 3" (click)="labelTopVersion = 3">V3</button>
+                  </div>
+                </div>
+                <div class="two-up-row">
+                  <span class="two-up-label">Bottom half</span>
+                  <div class="mini-ver-toggle">
+                    <button type="button" class="mini-ver-btn" [class.active]="labelBottomVersion === 1" (click)="labelBottomVersion = 1">V1</button>
+                    <button type="button" class="mini-ver-btn" [class.active]="labelBottomVersion === 2" (click)="labelBottomVersion = 2">V2</button>
+                    <button type="button" class="mini-ver-btn" [class.active]="labelBottomVersion === 3" (click)="labelBottomVersion = 3">V3</button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="field-group" style="margin-top:18px;margin-bottom:18px">
+          <p class="field-label">Receipt Footer</p>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <mat-slide-toggle [(ngModel)]="showQrCode">Show QR Code on receipt</mat-slide-toggle>
+            <span class="ver-hint" style="padding-left:4px">{{ showQrCode ? 'QR code prints above the website link' : 'Text only — ORDER ONLINE / website link / Visit Us Again' }}</span>
           </div>
         </div>
 
@@ -255,7 +311,32 @@ import { PrintService } from '../../core/services/print.service';
         </div>
       </mat-card>
 
-      <!-- Categories -->
+      <!-- Shop Code Cipher (owner only) -->
+      @if (auth.isOwner()) {
+      <mat-card class="settings-card">
+        <h3 class="section-title">Shop Code Cipher</h3>
+        <p class="cat-hint">10-letter key used to encode cost prices in product shop codes. Keep this secret.</p>
+        <div class="add-row" style="margin-top:8px">
+          <div style="position:relative; flex:1">
+            <input class="add-input" [(ngModel)]="cipherKey" placeholder="e.g. AAAAAAAAAA"
+              [type]="cipherVisible ? 'text' : 'password'"
+              maxlength="10" style="text-transform:uppercase; letter-spacing:2px; font-weight:600; padding-right:40px; width:100%"
+              (input)="cipherKey = cipherKey.toUpperCase()" />
+            <button mat-icon-button type="button" (click)="cipherVisible = !cipherVisible"
+              style="position:absolute; right:2px; top:50%; transform:translateY(-50%); color:#6b7280">
+              <mat-icon>{{ cipherVisible ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+          </div>
+          <button mat-flat-button class="add-btn" (click)="saveCipher()" [disabled]="cipherKey.length !== 10 || savingCipher">
+            @if (savingCipher) { <mat-spinner diameter="16" /> } @else { <mat-icon>save</mat-icon> Save }
+          </button>
+        </div>
+        <p class="cat-hint" style="margin-top:8px">Must be exactly 10 unique letters. Position 1–9 = digits 1–9, position 10 = 0.</p>
+      </mat-card>
+      }
+
+      <!-- Categories (owner only) -->
+      @if (auth.isOwner()) {
       <mat-card class="settings-card">
         <h3 class="section-title">Categories</h3>
         <p class="cat-hint">Set the ecommerce slug for each category so products sync to the online store correctly.</p>
@@ -293,6 +374,7 @@ import { PrintService } from '../../core/services/print.service';
           </button>
         </div>
       </mat-card>
+      } <!-- end @if (auth.isOwner()) — categories -->
     </div>
   `,
   styles: [`
@@ -381,6 +463,27 @@ import { PrintService } from '../../core/services/print.service';
     .printer-field { display: flex; flex-direction: column; gap: 4px; }
     .field-label { font-size: 12px; color: #6b7280; font-weight: 500; }
     .printer-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* 2-Up config */
+    .two-up-config { margin-top: 10px; background: #f8faff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+    .two-up-row { display: flex; align-items: center; justify-content: space-between; }
+    .two-up-label { font-size: 12px; font-weight: 600; color: #6b7280; width: 80px; }
+    .mini-ver-toggle { display: flex; gap: 6px; }
+    .mini-ver-btn { border: 1px solid #ddd; border-radius: 6px; padding: 4px 12px; background: #fff; cursor: pointer; font-size: 12px; font-weight: 700; color: #6b7280; font-family: inherit; transition: all 0.12s; }
+    .mini-ver-btn.active { background: #1b3050; color: #fff; border-color: #1b3050; }
+
+    /* Barcode version toggle */
+    .version-toggle { display: flex; gap: 8px; flex-wrap: wrap; }
+    .ver-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+      padding: 10px 8px; border: 2px solid #e2e6ec; border-radius: 8px; background: #fff;
+      cursor: pointer; transition: all 0.15s; color: #6b7280;
+    }
+    .ver-btn mat-icon { font-size: 20px; width: 20px; height: 20px; }
+    .ver-btn span:nth-child(2) { font-size: 13px; font-weight: 600; color: #1b3050; }
+    .ver-hint { font-size: 11px; color: #6b7280; }
+    .ver-btn.active { border-color: #1b3050; background: #f0f4f8; color: #1b3050; }
+    .ver-btn.active .ver-hint { color: #1b3050; }
     .printer-list { margin-bottom: 14px; }
     .printer-list-item {
       display: flex; align-items: center; gap: 8px; padding: 8px 10px;
@@ -417,7 +520,9 @@ export class SettingsComponent implements OnInit {
   private twService = inject(TempWorkerService);
   private catService = inject(CategoryService);
   private printService = inject(PrintService);
+  private appSettingService = inject(AppSettingService);
   private snack = inject(MatSnackBar);
+  auth = inject(AuthService);
 
   salespersons: Salesperson[] = [];
   tempWorkers: TempWorker[] = [];
@@ -443,6 +548,10 @@ export class SettingsComponent implements OnInit {
   connecting = false;
   receiptPrinterName = '';
   labelPrinterName = '';
+  labelVersion: 1 | 2 | 3 | 4 = 2;
+  labelTopVersion: 1 | 2 | 3 = 2;
+  labelBottomVersion: 1 | 2 | 3 = 1;
+  showQrCode = false;
   testingReceipt = false;
   testingLabel = false;
   testingDrawer = false;
@@ -459,6 +568,11 @@ export class SettingsComponent implements OnInit {
   autoPrintEnabled = true;
   paperWidth = '80';
 
+  // Shop code cipher
+  cipherKey = '';
+  cipherVisible = false;
+  savingCipher = false;
+
   ngOnInit() {
     this.spService.getAll().subscribe(s => this.salespersons = s);
     this.twService.getAll().subscribe(w => this.tempWorkers = w);
@@ -467,8 +581,23 @@ export class SettingsComponent implements OnInit {
     const cfg = this.printService.getConfig();
     this.receiptPrinterName = cfg.receiptPrinterName;
     this.labelPrinterName = cfg.labelPrinterName;
+    this.labelVersion = (cfg.labelVersion ?? 2) as 1 | 2 | 3 | 4;
+    this.labelTopVersion = (cfg.labelTopVersion ?? 2) as 1 | 2 | 3;
+    this.labelBottomVersion = (cfg.labelBottomVersion ?? 1) as 1 | 2 | 3;
+    this.showQrCode = cfg.showQrCode ?? false;
     this.autoPrintEnabled = localStorage.getItem('pos_auto_print') !== 'false';
     this.paperWidth = localStorage.getItem('pos_paper_width') || '80';
+    if (this.auth.isOwner()) {
+      this.appSettingService.getCipher().subscribe(v => this.cipherKey = v || '');
+    }
+  }
+
+  saveCipher() {
+    this.savingCipher = true;
+    this.appSettingService.setCipher(this.cipherKey).subscribe({
+      next: () => { this.snack.open('Cipher saved', '', { duration: 2000 }); this.savingCipher = false; },
+      error: () => { this.snack.open('Failed to save cipher', 'OK', { duration: 3000 }); this.savingCipher = false; }
+    });
   }
 
   // â”€â”€ Salesperson edit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -585,7 +714,7 @@ export class SettingsComponent implements OnInit {
   }
 
   savePrinterConfig() {
-    this.printService.saveConfig({ receiptPrinterName: this.receiptPrinterName, labelPrinterName: this.labelPrinterName });
+    this.printService.saveConfig({ receiptPrinterName: this.receiptPrinterName, labelPrinterName: this.labelPrinterName, labelVersion: this.labelVersion, showQrCode: this.showQrCode, labelTopVersion: this.labelTopVersion, labelBottomVersion: this.labelBottomVersion });
     this.snack.open('Printer config saved', '', { duration: 1500 });
   }
 

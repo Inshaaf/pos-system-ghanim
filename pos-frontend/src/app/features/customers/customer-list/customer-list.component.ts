@@ -13,6 +13,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { CustomerService } from '../../../core/services/customer.service';
 import { Customer } from '../../../core/models/customer.model';
 import { CustomerFormComponent } from '../customer-form/customer-form.component';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-customer-list',
@@ -96,12 +97,14 @@ import { CustomerFormComponent } from '../customer-form/customer-form.component'
             <ng-container matColumnDef="actions">
               <th mat-header-cell *matHeaderCellDef></th>
               <td mat-cell *matCellDef="let c">
-                <button mat-icon-button matTooltip="Edit" (click)="openForm(c)">
-                  <mat-icon>edit</mat-icon>
-                </button>
-                <button mat-icon-button matTooltip="Delete" class="delete-btn" (click)="confirmDelete(c)">
-                  <mat-icon>delete_outline</mat-icon>
-                </button>
+                @if (auth.isOwner()) {
+                  <button mat-icon-button matTooltip="Edit" (click)="openForm(c)">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button matTooltip="Delete" class="delete-btn" (click)="confirmDelete(c)">
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                }
               </td>
             </ng-container>
 
@@ -144,6 +147,7 @@ export class CustomerListComponent implements OnInit {
   private customerService = inject(CustomerService);
   private dialog = inject(MatDialog);
   private snack = inject(MatSnackBar);
+  auth = inject(AuthService);
 
   customers: Customer[] = [];
   filtered: Customer[] = [];

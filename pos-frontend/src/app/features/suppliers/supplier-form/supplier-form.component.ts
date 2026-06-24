@@ -19,6 +19,13 @@ import { SupplierService } from '../../../core/services/product.service';
         <mat-label>Name *</mat-label>
         <input matInput [(ngModel)]="name" required />
       </mat-form-field>
+      <mat-form-field appearance="outline" class="code-field">
+        <mat-label>Supplier Code (2–5 letters)</mat-label>
+        <input matInput [(ngModel)]="code" maxlength="5"
+          placeholder="e.g. GH, RC, PL"
+          (input)="code = code.toUpperCase()" />
+        <mat-hint>Used as barcode prefix — e.g. GH → GH0001234567</mat-hint>
+      </mat-form-field>
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Phone</mat-label>
         <input matInput [(ngModel)]="phone" />
@@ -43,6 +50,7 @@ import { SupplierService } from '../../../core/services/product.service';
     h2 { padding: 16px 24px 0; }
     mat-dialog-content { padding: 8px 24px; }
     .full-width { width: 100%; }
+    .code-field { width: 100%; margin-bottom: 4px; }
     .save-btn { background: #1b3050 !important; color: #fff !important; }
   `]
 })
@@ -52,6 +60,7 @@ export class SupplierFormComponent {
   private supplierService = inject(SupplierService);
 
   name = this.data.supplier?.name || '';
+  code = this.data.supplier?.code || '';
   phone = this.data.supplier?.phone || '';
   address = this.data.supplier?.address || '';
   notes = this.data.supplier?.notes || '';
@@ -59,7 +68,8 @@ export class SupplierFormComponent {
 
   save() {
     this.loading = true;
-    const payload = { name: this.name, phone: this.phone, address: this.address, notes: this.notes };
+    const codeVal = this.code.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 5) || undefined;
+    const payload = { name: this.name, code: codeVal, phone: this.phone, address: this.address, notes: this.notes };
     const obs = this.data.supplier
       ? this.supplierService.update(this.data.supplier.id, payload)
       : this.supplierService.create(payload);

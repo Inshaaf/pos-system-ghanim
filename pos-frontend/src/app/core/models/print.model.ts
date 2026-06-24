@@ -26,10 +26,15 @@ export interface LabelData {
   barcode: string;
   productName: string;
   labelName?: string;
+  shopCode?: string;
   retailPrice: number;
 }
 
 export interface PrinterConfig {
   receiptPrinterName: string;
   labelPrinterName: string;
+  labelVersion: 1 | 2 | 3 | 4;
+  showQrCode: boolean;
+  labelTopVersion?: 1 | 2 | 3;
+  labelBottomVersion?: 1 | 2 | 3;
 }

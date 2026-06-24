@@ -20,7 +20,7 @@ export const routes: Routes = [
       { path: 'cash-reconciliation', loadComponent: () => import('./features/cash-reconciliation/cash-reconciliation.component').then(m => m.CashReconciliationComponent), canActivate: [ownerGuard] },
       { path: 'reports', loadComponent: () => import('./features/reports/daily-report/daily-report.component').then(m => m.DailyReportComponent), canActivate: [ownerGuard] },
       { path: 'expenses', loadComponent: () => import('./features/expenses/expenses.component').then(m => m.ExpensesComponent) },
-      { path: 'settings', loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent), canActivate: [ownerGuard] },
+      { path: 'settings', loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent) },
       { path: '', redirectTo: 'pos', pathMatch: 'full' }
     ]
   },

@@ -895,4 +895,20 @@
   }
 }
 
-
+.quick-sale-header-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  background: #d97706;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+  &:hover { background: #b45309; }
+}

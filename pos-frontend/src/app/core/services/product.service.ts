@@ -34,6 +34,10 @@ export class ProductService {
     return this.http.put<any>(`${this.base}/${id}`, product).pipe(map(r => r.data));
   }
 
+  nextBarcode(prefix: string): Observable<string> {
+    return this.http.get<any>(`${this.base}/next-barcode`, { params: { prefix } }).pipe(map(r => r.data));
+  }
+
   delete(id: number): Observable<void> {
     return this.http.delete<any>(`${this.base}/${id}`);
   }
@@ -118,5 +122,18 @@ export class TempWorkerService {
 
   update(id: number, name: string, active: boolean): Observable<TempWorker> {
     return this.http.put<any>(`${environment.apiUrl}/temp-workers/${id}`, { name, active }).pipe(map(r => r.data));
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class AppSettingService {
+  constructor(private http: HttpClient) {}
+
+  getCipher(): Observable<string> {
+    return this.http.get<any>(`${environment.apiUrl}/app-settings/shop-code-cipher`).pipe(map(r => r.data));
+  }
+
+  setCipher(value: string): Observable<string> {
+    return this.http.put<any>(`${environment.apiUrl}/app-settings/shop-code-cipher`, { value }).pipe(map(r => r.data));
   }
 }

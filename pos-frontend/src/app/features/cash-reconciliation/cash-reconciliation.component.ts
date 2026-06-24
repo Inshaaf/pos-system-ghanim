@@ -94,6 +94,12 @@ import { OpenSessionDialogComponent } from '../pos/components/open-session-dialo
                   <span class="rec-label">+ Cash Sales</span>
                   <span class="rec-value">LKR {{ s.cashSales | number:'1.2-2' }}</span>
                 </div>
+                @if (s.quickSaleCash > 0) {
+                  <div class="rec-row qs-row">
+                    <span class="rec-label">+ Quick Sale Cash</span>
+                    <span class="rec-value qs-val">LKR {{ s.quickSaleCash | number:'1.2-2' }}</span>
+                  </div>
+                }
                 @if (s.cashIn > 0) {
                   <div class="rec-row">
                     <span class="rec-label">+ Cash In</span>
@@ -203,6 +209,8 @@ import { OpenSessionDialogComponent } from '../pos/components/open-session-dialo
     .rec-label { font-size: 13px; color: #6b7280; }
     .rec-value { font-size: 13px; font-weight: 600; color: #1b3050; }
     .rec-value.minus { color: #c62828; }
+    .rec-row.qs-row { background: #fff8f0; border-radius: 4px; padding: 4px 4px; }
+    .rec-value.qs-val { color: #ea580c; }
     .rec-row.total-row { border-top: 2px solid #e2e8f0; margin-top: 4px; padding-top: 8px; }
     .rec-row.total-row .rec-label { font-weight: 700; color: #374151; font-size: 13px; }
     .rec-value.expected { font-size: 15px; color: #1b3050; font-weight: 800; }

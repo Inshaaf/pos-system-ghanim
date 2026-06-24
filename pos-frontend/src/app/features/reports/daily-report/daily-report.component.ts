@@ -59,6 +59,20 @@ import {
                 </mat-card>
               </div>
 
+              @if (daily.quickSaleCount > 0) {
+                <div class="qs-banner">
+                  <mat-icon class="qs-icon">bolt</mat-icon>
+                  <div class="qs-text">
+                    <span class="qs-label">Quick Sales</span>
+                    <span class="qs-note">Revenue collected but not counted in profit (no cost price)</span>
+                  </div>
+                  <div class="qs-stats">
+                    <span class="qs-count">{{ daily.quickSaleCount }} sale(s)</span>
+                    <span class="qs-total">Rs {{ daily.quickSaleTotal | number:'1.0-0' }}</span>
+                  </div>
+                </div>
+              }
+
               <div class="row-cards">
                 <mat-card class="half-card">
                   <div class="card-title">By Salesperson</div>
@@ -78,6 +92,9 @@ import {
                   <div class="card-title">Cash Summary</div>
                   <div class="info-row"><span>Opening Float</span><span>Rs {{ daily.cashSummary.openingFloat | number:'1.0-0' }}</span></div>
                   <div class="info-row"><span>Cash Sales</span><span>Rs {{ daily.cashSummary.totalCashSales | number:'1.0-0' }}</span></div>
+                  @if (daily.cashSummary.quickSaleCash > 0) {
+                    <div class="info-row qs-row"><span>Quick Sale Cash</span><span class="qs-amount">Rs {{ daily.cashSummary.quickSaleCash | number:'1.0-0' }}</span></div>
+                  }
                   <div class="info-row"><span>Cash In</span><span>Rs {{ daily.cashSummary.cashIn | number:'1.0-0' }}</span></div>
                   <div class="info-row"><span>Cash Out</span><span class="red">-Rs {{ daily.cashSummary.cashOut | number:'1.0-0' }}</span></div>
                   <div class="info-row bold"><span>Expected in Drawer</span><span>Rs {{ daily.cashSummary.expectedCash | number:'1.0-0' }}</span></div>
@@ -392,6 +409,18 @@ import {
     .margin-chip { padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; background: #f4f6f9; color: #6b7280; }
     .margin-chip.good { background: #e8f5e9; color: #2e7d32; }
     .margin-chip.low { background: #fdecea; color: #c62828; }
+
+    /* Quick Sales banner */
+    .qs-banner { display: flex; align-items: center; gap: 14px; background: #fff8f0; border: 1px solid #fed7aa; border-radius: 10px; padding: 14px 18px; }
+    .qs-icon { color: #ea580c; font-size: 22px; width: 22px; height: 22px; flex-shrink: 0; }
+    .qs-text { flex: 1; }
+    .qs-label { font-size: 14px; font-weight: 700; color: #ea580c; display: block; }
+    .qs-note { font-size: 11px; color: #9a3412; opacity: 0.8; }
+    .qs-stats { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+    .qs-count { font-size: 12px; color: #6b7280; }
+    .qs-total { font-size: 20px; font-weight: 800; color: #ea580c; }
+    .info-row.qs-row { background: #fff8f0; }
+    .qs-amount { color: #ea580c; font-weight: 700; }
 
     /* Rank rows */
     .rank-row { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-bottom: 1px solid #eef0f4; }

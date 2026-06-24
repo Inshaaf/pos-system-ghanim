@@ -6,12 +6,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { CancelSaleDialogComponent } from '../cancel-sale-dialog/cancel-sale-dialog.component';
+import { PrintService } from '../../../core/services/print.service';
 
 @Component({
   selector: 'app-sale-detail-dialog',
   standalone: true,
   imports: [CommonModule, DatePipe, MatDialogModule, MatButtonModule, MatIconModule,
-    MatSnackBarModule, CancelSaleDialogComponent],
+    MatSnackBarModule, MatProgressSpinnerModule, CancelSaleDialogComponent],
   template: `
     <div class="detail-wrap">
       <div class="detail-header">
@@ -74,6 +75,12 @@ import { CancelSaleDialogComponent } from '../cancel-sale-dialog/cancel-sale-dia
 
       <div mat-dialog-actions class="detail-actions">
         <button mat-button (click)="dialogRef.close()">CLOSE</button>
+        @if (sale.status !== 'CANCELLED') {
+          <button mat-stroked-button (click)="reprintReceipt()" [disabled]="reprinting">
+            @if (reprinting) { <mat-spinner diameter="16" /> } @else { <mat-icon>print</mat-icon> }
+            REPRINT
+          </button>
+        }
         @if (sale.status === 'COMPLETED') {
           <button mat-stroked-button class="cancel-btn" (click)="cancelSale()">
             CANCEL SALE
@@ -117,6 +124,41 @@ export class SaleDetailDialogComponent {
   sale: any = inject(MAT_DIALOG_DATA).sale;
   private dialog = inject(MatDialog);
   private snack = inject(MatSnackBar);
+  private printService = inject(PrintService);
+
+  reprinting = false;
+
+  async reprintReceipt() {
+    this.reprinting = true;
+    try {
+      await this.printService.printReceipt({
+        saleId: this.sale.id,
+        date: this.sale.createdAt,
+        salespersonName: this.sale.salesperson?.name ?? '',
+        saleType: this.sale.saleType,
+        customerName: this.sale.customerName,
+        items: (this.sale.items ?? []).map((i: any) => ({
+          name: i.name,
+          quantity: i.quantity,
+          unitPrice: i.unitPrice,
+          discount: i.discount,
+          subtotal: i.subtotal
+        })),
+        subtotal: this.sale.subtotal,
+        itemDiscount: this.sale.itemDiscount,
+        cartDiscount: this.sale.cartDiscount,
+        total: this.sale.total,
+        paymentMethod: this.sale.paymentMethod,
+        cashTendered: this.sale.cashTendered,
+        changeAmount: this.sale.changeAmount
+      });
+      this.snack.open('Receipt reprinted', '', { duration: 2000 });
+    } catch {
+      this.snack.open('Printer offline — could not reprint', 'OK', { duration: 4000 });
+    } finally {
+      this.reprinting = false;
+    }
+  }
 
   cancelSale() {
     const ref = this.dialog.open(CancelSaleDialogComponent, {

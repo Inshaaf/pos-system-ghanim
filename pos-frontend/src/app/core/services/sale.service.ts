@@ -37,6 +37,24 @@ export class SaleService {
 }
 
 @Injectable({ providedIn: 'root' })
+export class QuickSaleService {
+  private base = `${environment.apiUrl}/quick-sales`;
+  constructor(private http: HttpClient) {}
+
+  create(payload: any): Observable<any> {
+    return this.http.post<any>(this.base, payload).pipe(map(r => r.data));
+  }
+
+  getByDate(date: string): Observable<any[]> {
+    return this.http.get<any>(this.base, { params: { date } }).pipe(map(r => r.data));
+  }
+
+  getById(id: number): Observable<any> {
+    return this.http.get<any>(`${this.base}/${id}`).pipe(map(r => r.data));
+  }
+}
+
+@Injectable({ providedIn: 'root' })
 export class ReturnService {
   private base = `${environment.apiUrl}/returns`;
 
