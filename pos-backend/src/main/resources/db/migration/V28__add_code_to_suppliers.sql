@@ -1,0 +1,1 @@
+ALTER TABLE pos.suppliers ADD COLUMN IF NOT EXISTS code VARCHAR(5);

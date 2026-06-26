@@ -13,12 +13,22 @@ import java.time.LocalDateTime;
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class Supplier {
 
+    public enum Type { BUSINESS, SHOP_NEED }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
     private String name;
+
+    @Column(length = 5)
+    private String code;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private Type type = Type.BUSINESS;
 
     private String phone;
     private String address;

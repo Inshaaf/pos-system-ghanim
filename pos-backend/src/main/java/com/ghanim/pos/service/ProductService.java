@@ -22,6 +22,7 @@ public class ProductService {
     private final SupplierRepository supplierRepository;
     private final StockLocationRepository stockLocationRepository;
     private final EcommerceSyncService ecommerceSyncService;
+    private final ShopCodeService shopCodeService;
 
     @Transactional(readOnly = true)
     public List<ProductResponse> getPosProducts(String search, Long categoryId) {
@@ -36,6 +37,14 @@ public class ProductService {
         } else {
             products = productRepository.findByShowInPosTrueAndActiveTrue();
         }
+        return products.stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductResponse> getAllActive(String search) {
+        List<Product> products = (search != null && !search.isBlank())
+                ? productRepository.searchAllActive(search)
+                : productRepository.findByActiveTrue();
         return products.stream().map(this::toResponse).collect(Collectors.toList());
     }
 
@@ -55,13 +64,21 @@ public class ProductService {
 
     @Transactional
     public ProductResponse create(ProductRequest request) {
+        String shopCode = request.getShopCode() != null ? request.getShopCode().toUpperCase() : null;
+        BigDecimal costPrice = request.getCostPrice();
+        if (shopCode != null) {
+            BigDecimal decoded = shopCodeService.decode(shopCode);
+            if (decoded != null) costPrice = decoded;
+        }
+
         Product product = Product.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .retailPrice(request.getRetailPrice())
                 .wholesalePrice(request.getWholesalePrice())
-                .costPrice(request.getCostPrice())
-                .shopCode(request.getShopCode() != null ? request.getShopCode().toUpperCase() : null)
+                .costPrice(costPrice)
+                .shopCode(shopCode)
+                .labelName(request.getLabelName())
                 .barcode(request.getBarcode())
                 .unit(request.getUnit())
                 .minWholesaleQty(request.getMinWholesaleQty())
@@ -102,12 +119,20 @@ public class ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + id));
 
+        String updatedShopCode = request.getShopCode() != null ? request.getShopCode().toUpperCase() : null;
+        BigDecimal updatedCostPrice = request.getCostPrice();
+        if (updatedShopCode != null) {
+            BigDecimal decoded = shopCodeService.decode(updatedShopCode);
+            if (decoded != null) updatedCostPrice = decoded;
+        }
+
         product.setName(request.getName());
         product.setDescription(request.getDescription());
         product.setRetailPrice(request.getRetailPrice());
         product.setWholesalePrice(request.getWholesalePrice());
-        product.setCostPrice(request.getCostPrice());
-        product.setShopCode(request.getShopCode() != null ? request.getShopCode().toUpperCase() : null);
+        product.setCostPrice(updatedCostPrice);
+        product.setShopCode(updatedShopCode);
+        product.setLabelName(request.getLabelName());
         product.setBarcode(request.getBarcode());
         product.setUnit(request.getUnit());
         product.setMinWholesaleQty(request.getMinWholesaleQty());
@@ -140,6 +165,20 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + id));
         product.setActive(false);
         productRepository.save(product);
+    }
+
+    @Transactional(readOnly = true)
+    public String nextBarcode(String prefix) {
+        String upper = prefix.toUpperCase();
+        List<String> existing = productRepository.findBarcodesByPrefix(upper);
+        int max = 0;
+        for (String bc : existing) {
+            String numPart = bc.substring(upper.length());
+            try { max = Math.max(max, Integer.parseInt(numPart)); } catch (NumberFormatException ignored) {}
+        }
+        int next = max + 1;
+        String pad = next < 1000 ? String.format("%03d", next) : String.valueOf(next);
+        return upper + pad;
     }
 
     private ProductResponse toResponse(Product p) {

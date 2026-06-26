@@ -38,6 +38,7 @@ export interface Supplier {
   id: number;
   name: string;
   code?: string;
+  type: 'BUSINESS' | 'SHOP_NEED';
   phone?: string;
   address?: string;
   notes?: string;

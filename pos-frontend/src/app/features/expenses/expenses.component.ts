@@ -10,6 +10,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { Router } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 import { ExpenseService } from '../../core/services/expense.service';
 import { SalespersonService, SupplierService, TempWorkerService } from '../../core/services/product.service';
 import { Expense, ExpenseCategory, CATEGORY_LABELS, CATEGORY_ICONS } from '../../core/models/expense.model';
@@ -68,7 +70,7 @@ import { Supplier, Salesperson, type TempWorker } from '../../core/models/produc
                   <select class="styled-select" [(ngModel)]="sp.supplierId" (ngModelChange)="onSupplierSelect()">
                     <option [value]="undefined">Select supplier...</option>
                     @for (s of suppliers; track s.id) {
-                      <option [value]="s.id">{{ s.name }}</option>
+                      <option [value]="s.id">{{ s.name }} {{ s.type === 'SHOP_NEED' ? '(Shop)' : '' }}</option>
                     }
                   </select>
                 </div>
@@ -76,6 +78,10 @@ import { Supplier, Salesperson, type TempWorker } from '../../core/models/produc
                   <div class="balance-badge" [class.credit]="selectedSupplier.balance > 0" [class.clear]="selectedSupplier.balance <= 0">
                     <mat-icon>account_balance</mat-icon>
                     Balance owed: Rs {{ selectedSupplier.balance | number:'1.0-0' }}
+                    @if (selectedSupplier.type === 'SHOP_NEED' && auth.isOwner()) {
+                      &nbsp;—&nbsp;
+                      <a class="ledger-link" (click)="goToLedger(selectedSupplier)">View delivery ledger</a>
+                    }
                   </div>
                 }
                 <div class="field-wrap">
@@ -92,14 +98,15 @@ import { Supplier, Salesperson, type TempWorker } from '../../core/models/produc
                   [disabled]="!sp.supplierId || !sp.amount || sp.amount <= 0">
                   <mat-icon>payments</mat-icon> Record Payment
                 </button>
-                <button mat-stroked-button class="add-balance-btn" (click)="addToSupplierBalance()"
-                  [disabled]="!sp.supplierId || !sp.balanceToAdd || sp.balanceToAdd <= 0">
-                  <mat-icon>add</mat-icon> Add to Balance
-                </button>
-                <div class="field-wrap inline">
-                  <input class="styled-input small" type="number" [(ngModel)]="sp.balanceToAdd" placeholder="Amount to add" min="0" />
-                </div>
               </div>
+              @if (selectedSupplier?.type === 'SHOP_NEED' && auth.isOwner()) {
+                <div class="delivery-hint">
+                  <mat-icon>info</mat-icon>
+                  To add balance for this supplier, record a delivery in
+                  <a class="ledger-link" (click)="goToDeliveries()">Shop Supplies</a>
+                  — deliveries are tracked with item, quantity &amp; price for owner verification.
+                </div>
+              }
             </mat-card>
 
             <!-- Bus Fare -->
@@ -447,6 +454,16 @@ import { Supplier, Salesperson, type TempWorker } from '../../core/models/produc
     }
     .empty-state mat-icon { font-size: 36px; width: 36px; height: 36px; }
     .empty-state p { font-size: 14px; }
+
+    .delivery-hint {
+      display: flex; align-items: flex-start; gap: 8px;
+      margin-top: 12px; padding: 10px 14px; border-radius: 8px;
+      background: #fff8e1; color: #7b5800; font-size: 12px; line-height: 1.5;
+    }
+    .delivery-hint mat-icon { font-size: 16px; width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
+    .ledger-link {
+      color: #1565c0; cursor: pointer; text-decoration: underline; font-weight: 600;
+    }
   `]
 })
 export class ExpensesComponent implements OnInit {
@@ -455,6 +472,8 @@ export class ExpensesComponent implements OnInit {
   private spService = inject(SalespersonService);
   private twService = inject(TempWorkerService);
   private snack = inject(MatSnackBar);
+  private router = inject(Router);
+  auth = inject(AuthService);
 
   selectedDate = new Date().toISOString().split('T')[0];
   selectedMonth = new Date().toISOString().substring(0, 7);
@@ -467,7 +486,7 @@ export class ExpensesComponent implements OnInit {
   monthlySummary: Record<string, number> = {};
 
   // Form states
-  sp = { supplierId: undefined as number | undefined, amount: undefined as number | undefined, note: '', balanceToAdd: undefined as number | undefined };
+  sp = { supplierId: undefined as number | undefined, amount: undefined as number | undefined, note: '' };
   bf = { salespersonId: undefined as number | undefined, amount: 300, note: 'Bus fare - deduct from salary' };
   tw = { workerId: undefined as number | undefined, note: '', amount: 1500 };
   sal = { salespersonId: undefined as number | undefined, amount: undefined as number | undefined, note: '' };
@@ -525,20 +544,19 @@ export class ExpensesComponent implements OnInit {
       expenseDate: this.selectedDate
     }).subscribe(() => {
       this.snack.open('Supplier payment recorded', '', { duration: 1500 });
-      this.sp = { supplierId: undefined, amount: undefined, note: '', balanceToAdd: undefined };
+      this.sp = { supplierId: undefined, amount: undefined, note: '' };
       this.selectedSupplier = undefined;
       this.supplierService.getAll().subscribe(s => this.suppliers = s);
       this.load();
     });
   }
 
-  addToSupplierBalance() {
-    if (!this.sp.supplierId || !this.sp.balanceToAdd) return;
-    this.expenseService.addSupplierBalance(this.sp.supplierId, this.sp.balanceToAdd).subscribe(() => {
-      this.snack.open('Supplier balance updated', '', { duration: 1500 });
-      this.sp.balanceToAdd = undefined;
-      this.supplierService.getAll().subscribe(s => { this.suppliers = s; this.onSupplierSelect(); });
-    });
+  goToDeliveries() {
+    this.router.navigate(['/shop-supplies']);
+  }
+
+  goToLedger(supplier: Supplier) {
+    this.router.navigate(['/shop-supplies'], { queryParams: { supplierId: supplier.id } });
   }
 
   addBusFare() {

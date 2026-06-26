@@ -160,7 +160,7 @@ export class SalesHistoryComponent implements OnInit {
   quickSales: any[] = [];
   loading = false;
   qsLoading = false;
-  selectedDate = new Date().toISOString().split('T')[0];
+  selectedDate = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
 
   get salesTotal(): number {
     return this.sales.reduce((s, x) => s + (x.total ?? 0), 0);
