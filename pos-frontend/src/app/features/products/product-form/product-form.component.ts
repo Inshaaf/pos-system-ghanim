@@ -36,7 +36,8 @@ import { AuthService } from '../../../core/services/auth.service';
         <div class="form-row">
           <mat-form-field appearance="outline" floatLabel="always" class="full-width">
             <mat-label>Label Name</mat-label>
-            <input matInput formControlName="labelName" placeholder="Short name for barcode label (optional)" />
+            <input matInput formControlName="labelName" placeholder="Short name for barcode label (optional)"
+              style="text-transform:uppercase" (input)="toUpper('labelName', $event)" />
             <mat-hint>Printed on labels instead of the full product name</mat-hint>
           </mat-form-field>
         </div>
@@ -63,7 +64,7 @@ import { AuthService } from '../../../core/services/auth.service';
             <mat-form-field appearance="outline" class="shop-code-field">
               <mat-label>Shop Code</mat-label>
               <input matInput formControlName="shopCode" placeholder="e.g. BAS"
-                style="text-transform:uppercase" />
+                style="text-transform:uppercase" (input)="toUpper('shopCode', $event)" />
               <mat-hint>Encoded price — cost is decoded automatically on save</mat-hint>
             </mat-form-field>
             <button mat-icon-button type="button" class="decode-btn"
@@ -344,6 +345,15 @@ export class ProductFormComponent implements OnInit {
         error: () => { this.decodeError = 'Could not load cipher'; }
       });
     }
+  }
+
+  toUpper(field: string, event: Event) {
+    const input = event.target as HTMLInputElement;
+    const upper = input.value.toUpperCase();
+    const sel = input.selectionStart;
+    input.value = upper;
+    input.setSelectionRange(sel, sel);
+    this.form.get(field)?.setValue(upper, { emitEvent: false });
   }
 
   save() {
