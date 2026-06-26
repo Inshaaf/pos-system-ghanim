@@ -48,4 +48,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query("SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.stockLocations LEFT JOIN FETCH p.category WHERE p.active = true AND p.supplier.id = :supplierId")
     List<Product> findBySupplierIdAndActiveTrue(@Param("supplierId") Long supplierId);
+
+    @Query("SELECT p.barcode FROM Product p WHERE p.barcode LIKE CONCAT(:prefix, '%')")
+    List<String> findBarcodesByPrefix(@Param("prefix") String prefix);
+
+    @Query("SELECT p FROM Product p WHERE p.active = true AND " +
+           "(LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           " OR LOWER(p.barcode) LIKE LOWER(CONCAT('%', :search, '%')))")
+    List<Product> searchAllActive(@Param("search") String search);
+
+    List<Product> findByActiveTrue();
 }

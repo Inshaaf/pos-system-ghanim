@@ -119,12 +119,12 @@ interface QsItem {
             <span class="total-label">Total (Rs)</span>
             <div class="total-value-wrap">
               <span class="total-auto">{{ effectiveTotal | number:'1.0-0' }}</span>
-              @if (items.length > 0) {
+              @if (validItems.length > 0) {
                 <span class="total-hint">auto-calculated</span>
               }
             </div>
           </div>
-          @if (items.length === 0) {
+          @if (validItems.length === 0) {
             <input class="total-manual-inp" type="number" [(ngModel)]="manualTotal"
               (input)="calcChange()" min="0" step="1" placeholder="Enter amount" />
           }
@@ -302,9 +302,13 @@ export class QuickSaleDialogComponent implements OnInit {
 
   readonly quickAmounts = [500, 1000, 2000, 5000];
 
+  get validItems(): QsItem[] {
+    return this.items.filter(i => i.name.trim() && i.unitPrice > 0);
+  }
+
   get effectiveTotal(): number {
-    if (this.items.length > 0) {
-      return this.items.reduce((s, i) => s + (i.quantity || 0) * (i.unitPrice || 0), 0);
+    if (this.validItems.length > 0) {
+      return this.validItems.reduce((s, i) => s + (i.quantity || 0) * (i.unitPrice || 0), 0);
     }
     return this.manualTotal ?? 0;
   }
@@ -363,7 +367,9 @@ export class QuickSaleDialogComponent implements OnInit {
   }
 
   canSubmit(): boolean {
-    return !!this.salespersonId && this.effectiveTotal > 0;
+    if (!this.salespersonId) return false;
+    if (this.validItems.length > 0) return true;
+    return (this.manualTotal ?? 0) > 0;
   }
 
   async submit() {

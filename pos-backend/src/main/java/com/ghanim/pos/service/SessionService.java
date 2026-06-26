@@ -4,6 +4,7 @@ import com.ghanim.pos.entity.CashMovement;
 import com.ghanim.pos.entity.Session;
 import com.ghanim.pos.exception.ResourceNotFoundException;
 import com.ghanim.pos.repository.CashMovementRepository;
+import com.ghanim.pos.repository.QuickSaleRepository;
 import com.ghanim.pos.repository.SaleRepository;
 import com.ghanim.pos.repository.SessionRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class SessionService {
     private final SessionRepository sessionRepository;
     private final CashMovementRepository cashMovementRepository;
     private final SaleRepository saleRepository;
+    private final QuickSaleRepository quickSaleRepository;
 
     public Optional<Session> getCurrentSession() {
         return sessionRepository.findFirstByStatusOrderByOpenedAtDesc("OPEN");
@@ -155,8 +157,12 @@ public class SessionService {
                 .map(CashMovement::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        LocalDateTime sessionFrom = session.getOpenedAt();
+        LocalDateTime sessionTo = session.getClosedAt() != null ? session.getClosedAt() : LocalDateTime.now();
+        BigDecimal quickSaleCash = quickSaleRepository.sumCashBetween(sessionFrom, sessionTo);
+
         BigDecimal opening = session.getOpeningFloat() != null ? session.getOpeningFloat() : BigDecimal.ZERO;
-        BigDecimal expected = opening.add(cashSales).add(cashIn).subtract(cashOut).subtract(cashRefunds);
+        BigDecimal expected = opening.add(cashSales).add(quickSaleCash).add(cashIn).subtract(cashOut).subtract(cashRefunds);
         BigDecimal difference = session.getClosingCash() != null
                 ? session.getClosingCash().subtract(expected)
                 : null;
@@ -169,6 +175,7 @@ public class SessionService {
         m.put("closedAt", session.getClosedAt());
         m.put("openingFloat", opening);
         m.put("cashSales", cashSales);
+        m.put("quickSaleCash", quickSaleCash);
         m.put("cashIn", cashIn);
         m.put("cashOut", cashOut);
         m.put("cashRefunds", cashRefunds);

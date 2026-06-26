@@ -46,6 +46,11 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.ok(productService.update(id, request)));
     }
 
+    @GetMapping("/next-barcode")
+    public ResponseEntity<ApiResponse<String>> nextBarcode(@RequestParam String prefix) {
+        return ResponseEntity.ok(ApiResponse.ok(productService.nextBarcode(prefix)));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         productService.delete(id);

@@ -11,8 +11,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/suppliers")
 @RequiredArgsConstructor
@@ -21,7 +19,11 @@ public class SupplierController {
     private final SupplierService supplierService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<Supplier>>> getAll() {
+    public ResponseEntity<ApiResponse<List<Supplier>>> getAll(
+            @RequestParam(required = false) String type) {
+        if (type != null) {
+            return ResponseEntity.ok(ApiResponse.ok(supplierService.getByType(Supplier.Type.valueOf(type))));
+        }
         return ResponseEntity.ok(ApiResponse.ok(supplierService.getAll()));
     }
 
