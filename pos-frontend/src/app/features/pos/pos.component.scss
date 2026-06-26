@@ -306,7 +306,9 @@
 }
 
 .product-image {
-  height: 130px;
+  height: 150px;
+  min-height: 150px;
+  flex-shrink: 0;
   background: #f4f6f9;
   display: flex;
   align-items: center;
@@ -330,7 +332,6 @@
 
 .product-info {
   padding: 10px 12px 12px;
-  flex: 1;
 }
 
 .product-name {
