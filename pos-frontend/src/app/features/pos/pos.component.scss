@@ -262,6 +262,8 @@
   cursor: pointer;
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 1px 3px rgba(26, 35, 50, 0.07);
   transition:
     transform 0.15s,
@@ -274,6 +276,7 @@
   }
   &:hover .add-overlay {
     opacity: 1;
+    visibility: visible;
   }
 }
 
@@ -327,6 +330,7 @@
 
 .product-info {
   padding: 10px 12px 12px;
+  flex: 1;
 }
 
 .product-name {
@@ -373,13 +377,18 @@
 
 .add-overlay {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   background: rgba(26, 35, 50, 0.72);
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.15s;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s, visibility 0.15s;
   color: #c9a84c;
   mat-icon {
     font-size: 36px;

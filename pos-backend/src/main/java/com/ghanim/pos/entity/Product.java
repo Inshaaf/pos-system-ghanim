@@ -63,6 +63,7 @@ public class Product {
 
     // POS-specific columns (added via ALTER TABLE)
     private String shopCode;
+    private String labelName;
     private String barcode;
     private String unit = "piece";
     private Integer minWholesaleQty = 1;
@@ -92,6 +93,7 @@ public class Product {
     private List<StockLocation> stockLocations = new ArrayList<>();
 
     @Transient
+    @JsonIgnore
     public BigDecimal getShopStock() {
         return stockLocations.stream()
                 .filter(sl -> "SHOP".equals(sl.getLocation()))

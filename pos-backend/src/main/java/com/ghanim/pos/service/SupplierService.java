@@ -26,6 +26,10 @@ public class SupplierService {
         return supplierRepository.findByActiveTrue();
     }
 
+    public List<Supplier> getByType(Supplier.Type type) {
+        return supplierRepository.findByActiveTrueAndType(type);
+    }
+
     public Supplier create(Supplier supplier) {
         return supplierRepository.save(supplier);
     }
@@ -34,10 +38,12 @@ public class SupplierService {
         Supplier supplier = supplierRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Supplier not found: " + id));
         supplier.setName(updated.getName());
+        supplier.setCode(updated.getCode());
         supplier.setPhone(updated.getPhone());
         supplier.setAddress(updated.getAddress());
         supplier.setNotes(updated.getNotes());
         supplier.setActive(updated.isActive());
+        if (updated.getType() != null) supplier.setType(updated.getType());
         return supplierRepository.save(supplier);
     }
 

@@ -26,6 +26,7 @@ public class ReportService {
     private final ExpenseRepository expenseRepository;
     private final ReturnRepository returnRepository;
     private final ReturnItemRepository returnItemRepository;
+    private final QuickSaleRepository quickSaleRepository;
 
     // ── Daily Report ─────────────────────────────────────────────────────────
 
@@ -118,18 +119,25 @@ public class ReportService {
                 .stream().map(Expense::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal netProfit = totalProfit.subtract(totalExpenses);
 
+        BigDecimal quickSaleTotal = quickSaleRepository.sumTotalBetween(from, to);
+        BigDecimal quickSaleCash = quickSaleRepository.sumCashBetween(from, to);
+        long quickSaleCount = quickSaleRepository.countByCreatedAtBetween(from, to);
+
         report.put("totalProfit", totalProfit);
         report.put("totalExpenses", totalExpenses);
         report.put("netProfit", netProfit);
         report.put("margin", margin.setScale(1, RoundingMode.HALF_UP));
+        report.put("quickSaleCount", quickSaleCount);
+        report.put("quickSaleTotal", quickSaleTotal);
         report.put("salespersonBreakdown", new ArrayList<>(salespersonMap.values()));
         Map<String, Object> cashSummary = new LinkedHashMap<>();
         cashSummary.put("openingFloat", openingFloat);
         cashSummary.put("totalCashSales", cashSales);
+        cashSummary.put("quickSaleCash", quickSaleCash);
         cashSummary.put("cashIn", cashIn);
         cashSummary.put("cashOut", cashOut);
         cashSummary.put("cashRefunds", cashRefunds);
-        cashSummary.put("expectedCash", openingFloat.add(cashSales).add(cashIn).subtract(cashOut).subtract(cashRefunds));
+        cashSummary.put("expectedCash", openingFloat.add(cashSales).add(quickSaleCash).add(cashIn).subtract(cashOut).subtract(cashRefunds));
         cashSummary.put("cashOutByReason", cashOutByReason);
         report.put("cashSummary", cashSummary);
         report.put("paymentBreakdown", Map.of("cash", cashSales, "card", cardSales, "credit", creditSales));

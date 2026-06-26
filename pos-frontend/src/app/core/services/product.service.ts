@@ -74,6 +74,10 @@ export class SupplierService {
     return this.http.get<any>(`${environment.apiUrl}/suppliers`).pipe(map(r => r.data));
   }
 
+  getByType(type: 'BUSINESS' | 'SHOP_NEED'): Observable<Supplier[]> {
+    return this.http.get<any>(`${environment.apiUrl}/suppliers`, { params: { type } }).pipe(map(r => r.data));
+  }
+
   create(supplier: Partial<Supplier>): Observable<Supplier> {
     return this.http.post<any>(`${environment.apiUrl}/suppliers`, supplier).pipe(map(r => r.data));
   }
