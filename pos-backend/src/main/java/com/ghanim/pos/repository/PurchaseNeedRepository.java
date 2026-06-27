@@ -13,6 +13,8 @@ public interface PurchaseNeedRepository extends JpaRepository<PurchaseNeed, Long
 
     List<PurchaseNeed> findAllByOrderByStatusAscRequestedAtDesc();
 
+    List<PurchaseNeed> findByCategoryOrderByStatusAscRequestedAtDesc(PurchaseNeed.Category category);
+
     @Query("SELECT n FROM PurchaseNeed n WHERE LOWER(n.name) LIKE LOWER(CONCAT('%', :q, '%')) ORDER BY n.status, n.requestedAt DESC")
     List<PurchaseNeed> searchByName(@Param("q") String query);
 }

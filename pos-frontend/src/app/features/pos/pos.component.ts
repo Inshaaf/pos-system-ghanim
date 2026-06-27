@@ -363,20 +363,24 @@ export class PosComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  private isMobile = window.matchMedia('(max-width: 767px)').matches ||
+                     ('ontouchstart' in window);
+
   ngAfterViewInit() {
-    this.focusSearch();
+    if (!this.isMobile) this.focusSearch();
   }
 
   focusSearch() {
+    if (this.isMobile) return;
     setTimeout(() => this.searchInputRef?.nativeElement?.focus(), 50);
   }
 
   onSearchBlur() {
+    if (this.isMobile) return;
     if (!this.dialog.openDialogs.length) {
       setTimeout(() => {
         const active = document.activeElement;
         const tag = active?.tagName?.toLowerCase();
-        // Don't steal focus if the user clicked into another input (e.g. discount field)
         if (tag === 'input' || tag === 'textarea') return;
         this.searchInputRef?.nativeElement?.focus();
       }, 150);
@@ -385,6 +389,7 @@ export class PosComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @HostListener('window:keydown', ['$event'])
   onKey(e: KeyboardEvent) {
+    if (this.isMobile) return;
     if (e.key === 'F2') { e.preventDefault(); this.openCheckout(); }
     if (e.key === 'F3') { e.preventDefault(); this.holdSale(); }
     if (e.ctrlKey && e.key === 'k') { e.preventDefault(); this.focusSearch(); }
