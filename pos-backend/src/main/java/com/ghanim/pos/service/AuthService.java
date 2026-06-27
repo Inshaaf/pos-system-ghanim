@@ -28,6 +28,6 @@ public class AuthService {
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
         User user = userRepository.findByUsername(request.getUsername()).orElseThrow();
         String token = jwtConfig.generateToken(userDetails, user.getRole(), user.getName());
-        return new LoginResponse(token, user.getRole(), user.getName());
+        return new LoginResponse(token, user.getRole(), user.getName(), user.getId());
     }
 }

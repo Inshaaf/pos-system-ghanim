@@ -121,7 +121,7 @@ export class LoginComponent {
     this.error = '';
     const { username, password } = this.form.value;
     this.auth.login(username!, password!).subscribe({
-      next: () => this.router.navigate(['/pos']),
+      next: () => this.router.navigate([this.auth.defaultRoute()]),
       error: () => { this.error = 'Invalid username or password'; this.loading = false; }
     });
   }

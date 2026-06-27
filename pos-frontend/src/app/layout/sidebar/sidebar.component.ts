@@ -12,6 +12,7 @@ interface NavItem {
   icon: string;
   route: string;
   ownerOnly?: boolean;
+  roles?: string[]; // if set, only shown to these roles (OWNER always sees everything)
 }
 
 @Component({
@@ -55,13 +56,22 @@ interface NavItem {
             </a>
           </li>
         }
-        <!-- More button -->
-        <li>
-          <button class="nav-item more-btn" [class.more-open]="moreOpen" (click)="moreOpen = !moreOpen">
-            <mat-icon>{{ moreOpen ? 'close' : 'menu' }}</mat-icon>
-            <span>More</span>
-          </button>
-        </li>
+        <!-- Logout directly for limited roles, More drawer for full roles -->
+        @if (auth.isSalesperson() || auth.isStorePerson()) {
+          <li>
+            <button class="nav-item logout-mobile-btn" (click)="handleLogout()">
+              <mat-icon>logout</mat-icon>
+              <span>Logout</span>
+            </button>
+          </li>
+        } @else {
+          <li>
+            <button class="nav-item more-btn" [class.more-open]="moreOpen" (click)="moreOpen = !moreOpen">
+              <mat-icon>{{ moreOpen ? 'close' : 'menu' }}</mat-icon>
+              <span>More</span>
+            </button>
+          </li>
+        }
       </ul>
 
       <div class="sidebar-footer">
@@ -70,7 +80,7 @@ interface NavItem {
             <div class="user-avatar">{{ auth.currentUser()?.name?.charAt(0) }}</div>
             <div class="user-details">
               <div class="user-name">{{ auth.currentUser()?.name }}</div>
-              <div class="user-role">{{ auth.currentUser()?.role === 'OWNER' ? 'Administrator' : 'Cashier' }}</div>
+              <div class="user-role">{{ roleLabel }}</div>
             </div>
           </div>
           <button class="logout-btn" (click)="handleLogout()">
@@ -96,7 +106,7 @@ interface NavItem {
               <div class="more-avatar">{{ auth.currentUser()?.name?.charAt(0) }}</div>
               <div>
                 <div class="more-name">{{ auth.currentUser()?.name }}</div>
-                <div class="more-role">{{ auth.currentUser()?.role === 'OWNER' ? 'Administrator' : 'Cashier' }}</div>
+                <div class="more-role">{{ roleLabel }}</div>
               </div>
             </div>
           </div>
@@ -182,6 +192,8 @@ interface NavItem {
         color: #fff;
       }
       .more-btn.more-open { background: rgba(255,255,255,0.08); color: #fff; }
+      .logout-mobile-btn { color: rgba(255,120,120,0.8) !important; }
+      .logout-mobile-btn:hover { color: #ff8080 !important; background: rgba(255,80,80,0.1); }
       .nav-item mat-icon, .more-btn mat-icon { font-size: 21px; width: 21px; height: 21px; }
     }
 
@@ -312,43 +324,64 @@ export class SidebarComponent {
   moreOpen = false;
 
   private navItems: NavItem[] = [
-    { label: 'POS',          icon: 'point_of_sale',         route: '/pos' },
-    { label: 'Products',     icon: 'inventory_2',            route: '/products' },
-    { label: 'Customers',    icon: 'people',                 route: '/customers' },
-    { label: 'Suppliers',    icon: 'local_shipping',         route: '/suppliers', ownerOnly: true },
-    { label: 'Sales History',icon: 'receipt_long',           route: '/sales' },
-    { label: 'Credits',      icon: 'account_balance',        route: '/credits' },
-    { label: 'Returns',      icon: 'assignment_return',      route: '/returns' },
-    { label: 'Warranty',     icon: 'verified_user',          route: '/warranty' },
-    { label: 'Close Till',   icon: 'point_of_sale',          route: '/close-till' },
-    { label: 'Cash Recon',   icon: 'account_balance_wallet', route: '/cash-reconciliation', ownerOnly: true },
-    { label: 'Reports',      icon: 'bar_chart',              route: '/reports', ownerOnly: true },
-    { label: 'Expenses',     icon: 'account_balance_wallet', route: '/expenses' },
-    { label: 'Shop Supplies',icon: 'shopping_bag',           route: '/shop-supplies' },
-    { label: 'Needs List',   icon: 'checklist',              route: '/needs' },
-    { label: 'Settings',     icon: 'settings',               route: '/settings' },
+    // OWNER + CASHIER routes
+    { label: 'POS',          icon: 'point_of_sale',         route: '/pos',                roles: ['OWNER', 'CASHIER'] },
+    { label: 'Products',     icon: 'inventory_2',            route: '/products',           roles: ['OWNER', 'CASHIER', 'SALESPERSON'] },
+    { label: 'Customers',    icon: 'people',                 route: '/customers',          roles: ['OWNER', 'CASHIER'] },
+    { label: 'Suppliers',    icon: 'local_shipping',         route: '/suppliers',          roles: ['OWNER'] },
+    { label: 'Sales History',icon: 'receipt_long',           route: '/sales',              roles: ['OWNER', 'CASHIER'] },
+    { label: 'Credits',      icon: 'account_balance',        route: '/credits',            roles: ['OWNER', 'CASHIER'] },
+    { label: 'Returns',      icon: 'assignment_return',      route: '/returns',            roles: ['OWNER', 'CASHIER'] },
+    { label: 'Warranty',     icon: 'verified_user',          route: '/warranty',           roles: ['OWNER', 'CASHIER'] },
+    { label: 'Close Till',   icon: 'lock_clock',             route: '/close-till',         roles: ['OWNER', 'CASHIER'] },
+    { label: 'Cash Recon',   icon: 'account_balance_wallet', route: '/cash-reconciliation',roles: ['OWNER'] },
+    { label: 'Reports',      icon: 'bar_chart',              route: '/reports',            roles: ['OWNER'] },
+    { label: 'Expenses',     icon: 'account_balance_wallet', route: '/expenses',           roles: ['OWNER', 'CASHIER'] },
+    { label: 'Shop Supplies',icon: 'shopping_bag',           route: '/shop-supplies',      roles: ['OWNER', 'CASHIER'] },
+    // SALESPERSON route
+    { label: 'Needs List',   icon: 'checklist',              route: '/needs',              roles: ['OWNER', 'SALESPERSON'] },
+    // STORE_PERSON route
+    { label: 'Store Needs',  icon: 'warehouse',              route: '/store-needs',        roles: ['OWNER', 'STORE_PERSON'] },
+    { label: 'Settings',     icon: 'settings',               route: '/settings',           roles: ['OWNER'] },
   ];
 
-  private mobileMainRoutes = ['/pos', '/sales', '/reports', '/expenses', '/needs'];
+  private get role(): string { return this.auth.currentUser()?.role ?? ''; }
+
+  private isMobileMain(route: string): boolean {
+    if (this.auth.isSalesperson()) return ['/needs', '/products'].includes(route);
+    if (this.auth.isStorePerson()) return ['/store-needs'].includes(route);
+    return ['/pos', '/sales', '/reports', '/expenses', '/needs'].includes(route);
+  }
+
+  private isVisible(item: NavItem): boolean {
+    if (!item.roles) return true;
+    return item.roles.includes(this.role);
+  }
 
   get visibleItems(): NavItem[] {
-    return this.navItems.filter(i => !i.ownerOnly || this.auth.isOwner());
+    return this.navItems.filter(i => this.isVisible(i));
   }
 
   get mobileNavItems(): NavItem[] {
-    return this.navItems.filter(i =>
-      this.mobileMainRoutes.includes(i.route) && (!i.ownerOnly || this.auth.isOwner())
-    );
+    return this.navItems.filter(i => this.isVisible(i) && this.isMobileMain(i.route));
   }
 
   get moreItems(): NavItem[] {
-    return this.navItems.filter(i =>
-      !this.mobileMainRoutes.includes(i.route) && (!i.ownerOnly || this.auth.isOwner())
-    );
+    return this.navItems.filter(i => this.isVisible(i) && !this.isMobileMain(i.route));
+  }
+
+  get roleLabel(): string {
+    switch (this.role) {
+      case 'OWNER': return 'Administrator';
+      case 'CASHIER': return 'Cashier';
+      case 'SALESPERSON': return 'Salesperson';
+      case 'STORE_PERSON': return 'Store Person';
+      default: return this.role;
+    }
   }
 
   handleLogout() {
-    if (!this.auth.isOwner() && this.session.currentSession()) {
+    if (this.auth.isCashier() && this.session.currentSession()) {
       this.router.navigate(['/close-till']);
       return;
     }

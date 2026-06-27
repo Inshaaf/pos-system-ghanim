@@ -14,6 +14,7 @@ import { SalespersonService, CategoryService, TempWorkerService, AppSettingServi
 import { Salesperson, Category, TempWorker } from '../../core/models/product.model';
 import { PrintService } from '../../core/services/print.service';
 import { AuthService } from '../../core/services/auth.service';
+import { UserService, AppUser } from '../../core/services/user.service';
 
 @Component({
   selector: 'app-settings',
@@ -375,6 +376,82 @@ import { AuthService } from '../../core/services/auth.service';
         </div>
       </mat-card>
       } <!-- end @if (auth.isOwner()) — categories -->
+
+      <!-- User Account Passwords (owner only) -->
+      @if (auth.isOwner()) {
+      <mat-card class="settings-card">
+        <h3 class="section-title">User Accounts</h3>
+        <p class="cat-hint">Change the username or password for any system user.</p>
+
+        @for (u of appUsers; track u.id) {
+          <div class="user-pw-row">
+            <div class="user-pw-info">
+              <div class="user-pw-avatar" [class.owner]="u.role === 'OWNER'">
+                {{ u.name.charAt(0).toUpperCase() }}
+              </div>
+              <div class="user-pw-details">
+                <div class="user-pw-name">{{ u.name }}</div>
+                <div class="user-pw-role">
+                  {{ roleDisplayName(u.role) }}
+                  @if (u.id === currentUserId) { <span class="you-badge">You</span> }
+                </div>
+                <div class="user-pw-username">&#64;{{ u.username }}</div>
+              </div>
+              @if (pwChangingId !== u.id && unChangingId !== u.id) {
+                <div class="user-pw-btns">
+                  <button mat-stroked-button class="change-un-btn" (click)="startUnChange(u)">
+                    <mat-icon>badge</mat-icon> Username
+                  </button>
+                  <button mat-stroked-button class="change-pw-btn" (click)="startPwChange(u)">
+                    <mat-icon>lock_reset</mat-icon> Password
+                  </button>
+                </div>
+              }
+            </div>
+
+            @if (unChangingId === u.id) {
+              <div class="pw-form">
+                <div class="pw-form-label">New username for {{ u.name }}</div>
+                <input class="add-input" type="text" [(ngModel)]="unNew"
+                  placeholder="New username (lowercase, no spaces)"
+                  (input)="unNew = unNew.toLowerCase().replace(' ', '')" />
+                @if (unError) { <div class="pw-error">{{ unError }}</div> }
+                <div class="pw-actions">
+                  <button mat-flat-button class="add-btn" (click)="saveUsername(u)" [disabled]="unSaving">
+                    @if (unSaving) { <mat-spinner diameter="16" /> } @else { <mat-icon>check</mat-icon> }
+                    Save Username
+                  </button>
+                  <button mat-stroked-button (click)="cancelUnChange()">Cancel</button>
+                </div>
+              </div>
+            }
+
+            @if (pwChangingId === u.id) {
+              <div class="pw-form">
+                <div class="pw-form-label">New password for {{ u.name }}</div>
+                @if (u.id === currentUserId) {
+                  <input class="add-input" type="password" [(ngModel)]="pwCurrent"
+                    placeholder="Current password" />
+                }
+                <input class="add-input" type="password" [(ngModel)]="pwNew"
+                  placeholder="New password (min 6 chars)" />
+                <input class="add-input" type="password" [(ngModel)]="pwConfirm"
+                  placeholder="Confirm new password" />
+                @if (pwError) { <div class="pw-error">{{ pwError }}</div> }
+                <div class="pw-actions">
+                  <button mat-flat-button class="add-btn" (click)="savePassword(u)" [disabled]="pwSaving">
+                    @if (pwSaving) { <mat-spinner diameter="16" /> } @else { <mat-icon>check</mat-icon> }
+                    Save Password
+                  </button>
+                  <button mat-stroked-button (click)="cancelPwChange()">Cancel</button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </mat-card>
+      }
+
     </div>
   `,
   styles: [`
@@ -514,12 +591,48 @@ import { AuthService } from '../../core/services/auth.service';
     .slug-chip.linked { background: #e3f2fd; color: #1565c0; }
     .slug-chip.unlinked { background: #f4f6f9; color: #9ca3af; font-style: italic; }
 
+    /* User passwords */
+    .user-pw-row {
+      border-bottom: 1px solid #eef0f4; padding: 12px 0;
+    }
+    .user-pw-row:last-child { border-bottom: none; }
+    .user-pw-info { display: flex; align-items: center; gap: 12px; }
+    .user-pw-avatar {
+      width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+      background: #1b3050; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 15px;
+    }
+    .user-pw-avatar.owner { background: #c9a84c; color: #1b3050; }
+    .user-pw-details { flex: 1; }
+    .user-pw-name { font-weight: 600; font-size: 14px; color: #1b3050; }
+    .user-pw-role { font-size: 12px; color: #6b7280; display: flex; align-items: center; gap: 6px; }
+    .user-pw-username { font-size: 11px; color: #9ca3af; margin-top: 2px; font-family: monospace; }
+    .you-badge {
+      font-size: 10px; font-weight: 700; background: #e3f2fd; color: #1565c0;
+      padding: 1px 6px; border-radius: 8px;
+    }
+    .user-pw-btns { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; }
+    .change-pw-btn, .change-un-btn { font-size: 12px !important; }
+    .change-un-btn { color: #1b3050 !important; }
+    .pw-form {
+      display: flex; flex-direction: column; gap: 10px;
+      margin-top: 14px; padding: 14px; background: #f8faff;
+      border: 1px solid #e2e8f0; border-radius: 8px;
+    }
+    .pw-form-label { font-size: 12px; font-weight: 600; color: #374151; }
+    .pw-actions { display: flex; gap: 8px; margin-top: 4px; }
+    .pw-error { font-size: 12px; color: #c62828; padding: 4px 0; }
+
     @media (max-width: 767px) {
       .page-container { padding: 12px; max-width: 100%; }
       .page-header { flex-direction: column; gap: 8px; }
       .settings-card { padding: 16px !important; }
       .sp-item { flex-wrap: wrap; gap: 8px; }
       .printer-field { flex-direction: column; }
+      .user-pw-info { flex-wrap: wrap; }
+      .user-pw-btns { width: 100%; }
+      .change-pw-btn, .change-un-btn { flex: 1; }
     }
   `]
 })
@@ -529,6 +642,7 @@ export class SettingsComponent implements OnInit {
   private catService = inject(CategoryService);
   private printService = inject(PrintService);
   private appSettingService = inject(AppSettingService);
+  private userService = inject(UserService);
   private snack = inject(MatSnackBar);
   auth = inject(AuthService);
 
@@ -581,6 +695,24 @@ export class SettingsComponent implements OnInit {
   cipherVisible = false;
   savingCipher = false;
 
+  // User account management
+  appUsers: AppUser[] = [];
+  currentUserId: number | null = null;
+
+  // Password change
+  pwChangingId: number | null = null;
+  pwCurrent = '';
+  pwNew = '';
+  pwConfirm = '';
+  pwError = '';
+  pwSaving = false;
+
+  // Username change
+  unChangingId: number | null = null;
+  unNew = '';
+  unError = '';
+  unSaving = false;
+
   ngOnInit() {
     this.spService.getAll().subscribe(s => this.salespersons = s);
     this.twService.getAll().subscribe(w => this.tempWorkers = w);
@@ -597,7 +729,91 @@ export class SettingsComponent implements OnInit {
     this.paperWidth = localStorage.getItem('pos_paper_width') || '80';
     if (this.auth.isOwner()) {
       this.appSettingService.getCipher().subscribe(v => this.cipherKey = v || '');
+      this.userService.getAll().subscribe(users => {
+        this.appUsers = users;
+        this.currentUserId = this.auth.currentUser()?.userId ?? null;
+      });
     }
+  }
+
+  roleDisplayName(role: string): string {
+    const map: Record<string, string> = {
+      OWNER: 'Owner', CASHIER: 'Cashier',
+      SALESPERSON: 'Salesperson', STORE_PERSON: 'Store Person'
+    };
+    return map[role] ?? role;
+  }
+
+  startUnChange(u: AppUser) {
+    this.unChangingId = u.id;
+    this.unNew = u.username;
+    this.unError = '';
+    this.pwChangingId = null;
+  }
+
+  cancelUnChange() {
+    this.unChangingId = null;
+    this.unError = '';
+  }
+
+  saveUsername(u: AppUser) {
+    this.unError = '';
+    if (!this.unNew.trim()) { this.unError = 'Username cannot be empty.'; return; }
+    if (this.unNew.trim() === u.username) { this.cancelUnChange(); return; }
+    this.unSaving = true;
+    this.userService.changeUsername(u.id, this.unNew.trim()).subscribe({
+      next: updated => {
+        this.unSaving = false;
+        this.unChangingId = null;
+        this.appUsers = this.appUsers.map(x => x.id === updated.id ? { ...x, username: updated.username } : x);
+        this.snack.open(`Username updated to @${updated.username}`, '', { duration: 3000 });
+      },
+      error: (err) => {
+        this.unSaving = false;
+        this.unError = err?.error?.message || err?.error?.data || 'Failed to update username';
+      }
+    });
+  }
+
+  startPwChange(u: AppUser) {
+    this.pwChangingId = u.id;
+    this.pwCurrent = '';
+    this.pwNew = '';
+    this.pwConfirm = '';
+    this.pwError = '';
+    this.unChangingId = null;
+  }
+
+  cancelPwChange() {
+    this.pwChangingId = null;
+    this.pwError = '';
+  }
+
+  savePassword(u: AppUser) {
+    this.pwError = '';
+    if (u.id === this.currentUserId && !this.pwCurrent) {
+      this.pwError = 'Please enter your current password.'; return;
+    }
+    if (!this.pwNew || this.pwNew.length < 6) {
+      this.pwError = 'New password must be at least 6 characters.'; return;
+    }
+    if (this.pwNew !== this.pwConfirm) {
+      this.pwError = 'Passwords do not match.'; return;
+    }
+    this.pwSaving = true;
+    const current = u.id === this.currentUserId ? this.pwCurrent : null;
+    this.userService.changePassword(u.id, current, this.pwNew).subscribe({
+      next: () => {
+        this.pwSaving = false;
+        this.pwChangingId = null;
+        this.snack.open(`Password updated for ${u.name}`, '', { duration: 3000 });
+      },
+      error: (err) => {
+        this.pwSaving = false;
+        const msg = err?.error?.message || err?.error?.data || 'Failed to update password';
+        this.pwError = msg;
+      }
+    });
   }
 
   saveCipher() {

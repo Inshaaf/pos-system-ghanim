@@ -4,6 +4,7 @@ import com.ghanim.pos.entity.PurchaseNeed;
 import com.ghanim.pos.service.PurchaseNeedService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,7 +19,9 @@ public class PurchaseNeedController {
 
     @GetMapping
     public List<PurchaseNeed> getAll(@RequestParam(required = false) String search,
-                                     @RequestParam(required = false) String status) {
+                                     @RequestParam(required = false) String status,
+                                     @RequestParam(required = false, defaultValue = "false") boolean storeOnly) {
+        if (storeOnly) return service.getStoreNeeds();
         if (search != null && !search.isBlank()) return service.search(search.trim());
         if (status != null) return service.getByStatus(PurchaseNeed.Status.valueOf(status.toUpperCase()));
         return service.getAll();
@@ -44,6 +47,14 @@ public class PurchaseNeedController {
     @PatchMapping("/{id}/re-request")
     public PurchaseNeed reRequest(@PathVariable Long id, @RequestBody Map<String, String> body) {
         return service.reRequest(id, body.get("requestedBy"));
+    }
+
+    @PatchMapping("/{id}/store-status")
+    public PurchaseNeed updateStoreStatus(@PathVariable Long id,
+                                          @RequestBody Map<String, String> body,
+                                          Authentication auth) {
+        PurchaseNeed.StoreStatus ss = PurchaseNeed.StoreStatus.valueOf(body.get("storeStatus").toUpperCase());
+        return service.updateStoreStatus(id, ss, auth.getName());
     }
 
     @DeleteMapping("/{id}")
