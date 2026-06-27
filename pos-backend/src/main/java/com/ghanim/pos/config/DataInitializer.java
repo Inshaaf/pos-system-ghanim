@@ -18,21 +18,22 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        userRepository.deleteAll();
-        log.info("Cleared existing users");
-
-        seedUser("Ghanim Owner", "owner",   "owner123",   "OWNER");
-        seedUser("Cashier One",  "cashier", "cashier123", "CASHIER");
+        seedIfMissing("Ghanim Owner",  "owner",       "owner123",       "OWNER");
+        seedIfMissing("Cashier One",   "cashier",     "cashier123",     "CASHIER");
+        seedIfMissing("Salesperson",   "salesperson", "salesperson123", "SALESPERSON");
+        seedIfMissing("Store Person",  "storeperson", "storeperson123", "STORE_PERSON");
     }
 
-    private void seedUser(String name, String username, String password, String role) {
-        userRepository.save(User.builder()
-                .name(name)
-                .username(username)
-                .password(passwordEncoder.encode(password))
-                .role(role)
-                .active(true)
-                .build());
-        log.info("Seeded user: {} ({})", username, role);
+    private void seedIfMissing(String name, String username, String password, String role) {
+        if (userRepository.findByUsername(username).isEmpty()) {
+            userRepository.save(User.builder()
+                    .name(name)
+                    .username(username)
+                    .password(passwordEncoder.encode(password))
+                    .role(role)
+                    .active(true)
+                    .build());
+            log.info("Seeded user: {} ({})", username, role);
+        }
     }
 }

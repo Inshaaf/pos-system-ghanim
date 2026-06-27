@@ -1,5 +1,6 @@
-export type NeedStatus   = 'NEEDED' | 'PURCHASED' | 'DISMISSED';
-export type NeedCategory = 'STORE' | 'PURCHASE';
+export type NeedStatus      = 'NEEDED' | 'PURCHASED' | 'DISMISSED';
+export type NeedCategory    = 'STORE' | 'PURCHASE';
+export type NeedStoreStatus = 'PENDING' | 'AVAILABLE';
 
 export interface PurchaseNeed {
   id: number;
@@ -9,6 +10,8 @@ export interface PurchaseNeed {
   notes?: string;
   status: NeedStatus;
   category: NeedCategory;
+  storeStatus: NeedStoreStatus;
+  markedAvailableBy?: string;
   supplyItem?: { id: number; name: string; unit: string };
   requestedBy: string;
   requestedAt: string;

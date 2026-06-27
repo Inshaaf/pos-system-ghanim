@@ -4,10 +4,13 @@ import { Router } from '@angular/router';
 import { tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
+export type UserRole = 'OWNER' | 'CASHIER' | 'SALESPERSON' | 'STORE_PERSON';
+
 export interface AuthUser {
   token: string;
-  role: 'OWNER' | 'CASHIER';
+  role: UserRole;
   name: string;
+  userId?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -64,8 +67,22 @@ export class AuthService {
     }
   }
 
-  isOwner(): boolean {
-    return this.currentUser()?.role === 'OWNER';
+  isOwner(): boolean     { return this.currentUser()?.role === 'OWNER'; }
+  isCashier(): boolean   { return this.currentUser()?.role === 'CASHIER'; }
+  isSalesperson(): boolean { return this.currentUser()?.role === 'SALESPERSON'; }
+  isStorePerson(): boolean { return this.currentUser()?.role === 'STORE_PERSON'; }
+
+  canAddNeeds(): boolean {
+    const r = this.currentUser()?.role;
+    return r === 'OWNER' || r === 'SALESPERSON';
+  }
+
+  defaultRoute(): string {
+    switch (this.currentUser()?.role) {
+      case 'SALESPERSON':  return '/needs';
+      case 'STORE_PERSON': return '/store-needs';
+      default:             return '/pos';
+    }
   }
 
   private loadUser(): AuthUser | null {

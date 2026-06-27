@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { PurchaseNeed, CreateNeedRequest, NeedStatus, NeedCategory } from '../models/purchase-need.model';
+import { PurchaseNeed, CreateNeedRequest, NeedStatus, NeedCategory, NeedStoreStatus } from '../models/purchase-need.model';
 
 @Injectable({ providedIn: 'root' })
 export class PurchaseNeedService {
@@ -14,6 +14,14 @@ export class PurchaseNeedService {
     if (search) params = params.set('search', search);
     if (status) params = params.set('status', status);
     return this.http.get<PurchaseNeed[]>(this.base, { params });
+  }
+
+  getStoreNeeds(): Observable<PurchaseNeed[]> {
+    return this.http.get<PurchaseNeed[]>(this.base, { params: { storeOnly: 'true' } });
+  }
+
+  updateStoreStatus(id: number, storeStatus: NeedStoreStatus): Observable<PurchaseNeed> {
+    return this.http.patch<PurchaseNeed>(`${this.base}/${id}/store-status`, { storeStatus });
   }
 
   create(req: CreateNeedRequest): Observable<PurchaseNeed> {

@@ -9,7 +9,7 @@ import { debounceTime, Subject } from 'rxjs';
 import { PurchaseNeedService } from '../../core/services/purchase-need.service';
 import { ShopSupplyService } from '../../core/services/shop-supply.service';
 import { AuthService } from '../../core/services/auth.service';
-import { PurchaseNeed, NeedStatus, NeedCategory } from '../../core/models/purchase-need.model';
+import { PurchaseNeed, NeedStatus, NeedCategory, NeedStoreStatus } from '../../core/models/purchase-need.model';
 import { ShopSupply } from '../../core/models/shop-supply.model';
 
 type Tab = 'needed' | 'resolved' | 'all';
@@ -251,6 +251,11 @@ type Tab = 'needed' | 'resolved' | 'all';
                       <mat-icon>{{ need.category === 'STORE' ? 'storefront' : 'shopping_cart' }}</mat-icon>
                       {{ need.category === 'STORE' ? 'From Store' : 'Buy from Supplier' }}
                     </span>
+                    @if (need.category === 'STORE' && need.storeStatus === 'AVAILABLE') {
+                      <span class="store-avail-badge">
+                        <mat-icon>check_circle</mat-icon> Available at Store
+                      </span>
+                    }
                   </div>
                   <div class="nc-meta">
                     @if (need.quantity) {
@@ -286,6 +291,19 @@ type Tab = 'needed' | 'resolved' | 'all';
                     (click)="toggleCategory(need)">
                     <mat-icon>{{ need.category === 'STORE' ? 'shopping_cart' : 'storefront' }}</mat-icon>
                   </button>
+                }
+                @if (need.category === 'STORE' && need.status === 'NEEDED' && (auth.isStorePerson() || auth.isOwner())) {
+                  @if (need.storeStatus === 'PENDING') {
+                    <button class="icon-action store-avail" (click)="markAvailableAtStore(need)"
+                      matTooltip="Mark as Available at Store">
+                      <mat-icon>check_circle</mat-icon>
+                    </button>
+                  } @else {
+                    <button class="icon-action store-unmark" (click)="unmarkAvailableAtStore(need)"
+                      matTooltip="Unmark Available">
+                      <mat-icon>remove_circle_outline</mat-icon>
+                    </button>
+                  }
                 }
                 @if (need.status === 'NEEDED') {
                   @if (auth.isOwner()) {
@@ -545,6 +563,16 @@ type Tab = 'needed' | 'resolved' | 'all';
     .icon-action.rerequest { background: #e0e7ff; color: #3730a3; &:hover { background: #c7d2fe; } }
     .icon-action.del { background: #fef2f2; color: #c62828; &:hover { background: #fee2e2; } }
     .icon-action.cat-toggle { background: #f5f0fc; color: #7b5ea7; &:hover { background: #ede4f7; } }
+    .icon-action.store-avail { background: #e8f5e9; color: #2e7d32; &:hover { background: #c8e6c9; } }
+    .icon-action.store-unmark { background: #e8f5e9; color: #2e7d32; &:hover { background: #c8e6c9; } }
+
+    /* Store available badge */
+    .store-avail-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px;
+      background: #e8f5e9; color: #2e7d32; flex-shrink: 0;
+      mat-icon { font-size: 11px; width: 11px; height: 11px; }
+    }
 
     /* Action buttons in re-request panel */
     .action-purchased, .action-dismiss, .action-rerequest {
@@ -751,6 +779,20 @@ export class NeedsComponent implements OnInit {
     this.needsService.delete(need.id).subscribe(() => {
       this.needs = this.needs.filter(n => n.id !== need.id);
       this.snack.open('Deleted', '', { duration: 2000 });
+    });
+  }
+
+  markAvailableAtStore(need: PurchaseNeed) {
+    this.needsService.updateStoreStatus(need.id, 'AVAILABLE').subscribe(updated => {
+      this.updateNeed(updated);
+      this.snack.open(`"${need.name}" marked as available at store`, '', { duration: 2500 });
+    });
+  }
+
+  unmarkAvailableAtStore(need: PurchaseNeed) {
+    this.needsService.updateStoreStatus(need.id, 'PENDING').subscribe(updated => {
+      this.updateNeed(updated);
+      this.snack.open(`"${need.name}" unmarked`, '', { duration: 2000 });
     });
   }
 

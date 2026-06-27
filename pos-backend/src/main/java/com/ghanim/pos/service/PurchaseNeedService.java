@@ -90,6 +90,19 @@ public class PurchaseNeedService {
     }
 
     @Transactional
+    public PurchaseNeed updateStoreStatus(Long id, PurchaseNeed.StoreStatus storeStatus, String markedBy) {
+        PurchaseNeed need = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Need not found: " + id));
+        need.setStoreStatus(storeStatus);
+        need.setMarkedAvailableBy(storeStatus == PurchaseNeed.StoreStatus.AVAILABLE ? markedBy : null);
+        return repo.save(need);
+    }
+
+    public List<PurchaseNeed> getStoreNeeds() {
+        return repo.findByCategoryOrderByStatusAscRequestedAtDesc(PurchaseNeed.Category.STORE);
+    }
+
+    @Transactional
     public void delete(Long id) {
         repo.deleteById(id);
     }
