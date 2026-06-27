@@ -44,6 +44,11 @@ public class PurchaseNeedService {
             builder.quantity(new BigDecimal(body.get("quantity").toString()));
         }
 
+        if (body.get("category") != null) {
+            try { builder.category(PurchaseNeed.Category.valueOf(body.get("category").toString().toUpperCase())); }
+            catch (IllegalArgumentException ignored) {}
+        }
+
         if (body.get("supplyItemId") != null) {
             Long supplyId = Long.parseLong(body.get("supplyItemId").toString());
             supplyRepo.findById(supplyId).ifPresent(builder::supplyItem);
@@ -61,6 +66,14 @@ public class PurchaseNeedService {
             need.setResolvedBy(resolvedBy);
             need.setResolvedAt(LocalDateTime.now());
         }
+        return repo.save(need);
+    }
+
+    @Transactional
+    public PurchaseNeed updateCategory(Long id, PurchaseNeed.Category category) {
+        PurchaseNeed need = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Need not found: " + id));
+        need.setCategory(category);
         return repo.save(need);
     }
 

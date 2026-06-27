@@ -400,6 +400,14 @@ import { Supplier } from '../../core/models/product.model';
     }
     .empty-state mat-icon { font-size: 36px; width: 36px; height: 36px; }
     .empty-state p { font-size: 14px; }
+
+    @media (max-width: 767px) {
+      .page-container { padding: 12px; max-width: 100%; }
+      .page-header { flex-direction: column; gap: 8px; }
+      .filter-row { flex-wrap: wrap; gap: 8px; }
+      .two-col { grid-template-columns: 1fr !important; }
+      .delivery-table { grid-template-columns: 1fr 50px 70px 70px 36px !important; font-size: 11px; }
+    }
   `]
 })
 export class ShopSuppliesComponent implements OnInit {

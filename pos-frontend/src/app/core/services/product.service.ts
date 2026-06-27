@@ -11,10 +11,11 @@ export class ProductService {
 
   constructor(private http: HttpClient) {}
 
-  getAll(search?: string, categoryId?: number): Observable<Product[]> {
+  getAll(search?: string, categoryId?: number, includeInactive = false): Observable<Product[]> {
     let params = new HttpParams();
     if (search) params = params.set('search', search);
     if (categoryId) params = params.set('categoryId', categoryId);
+    if (includeInactive) params = params.set('includeInactive', 'true');
     return this.http.get<any>(this.base, { params }).pipe(map(r => r.data));
   }
 
@@ -38,8 +39,16 @@ export class ProductService {
     return this.http.get<any>(`${this.base}/next-barcode`, { params: { prefix } }).pipe(map(r => r.data));
   }
 
+  reactivate(id: number): Observable<void> {
+    return this.http.patch<any>(`${this.base}/${id}/reactivate`, {});
+  }
+
   delete(id: number): Observable<void> {
     return this.http.delete<any>(`${this.base}/${id}`);
+  }
+
+  hardDelete(id: number): Observable<void> {
+    return this.http.delete<any>(`${this.base}/${id}/permanent`);
   }
 
   uploadImage(file: File): Observable<string> {

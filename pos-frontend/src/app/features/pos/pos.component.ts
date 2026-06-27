@@ -141,8 +141,27 @@ import { QuickSaleDialogComponent } from './components/quick-sale-dialog/quick-s
           }
         </div>
 
+        <!-- Mobile cart FAB -->
+        <button class="mobile-cart-fab" (click)="mobileCartOpen = true">
+          <mat-icon>shopping_cart</mat-icon>
+          @if (cart().length > 0) {
+            <span class="fab-badge">{{ cart().length }}</span>
+          }
+          @if (cartTotal() > 0) {
+            <span class="fab-total">LKR {{ cartTotal() | number:'1.0-0' }}</span>
+          }
+        </button>
+
+        <!-- Mobile cart overlay -->
+        @if (mobileCartOpen) {
+          <div class="mobile-cart-overlay" (click)="mobileCartOpen = false"></div>
+        }
+
         <!-- Right: Cart Panel -->
-        <div class="cart-panel">
+        <div class="cart-panel" [class.mobile-open]="mobileCartOpen">
+          <button class="mobile-cart-close" (click)="mobileCartOpen = false">
+            <mat-icon>keyboard_arrow_down</mat-icon>
+          </button>
 
           <!-- Cart header -->
           <div class="cart-header">
@@ -313,6 +332,7 @@ export class PosComponent implements OnInit, AfterViewInit, OnDestroy {
   saleType: 'RETAIL' | 'WHOLESALE' = 'RETAIL';
   loadingProducts = false;
   heldCount = 0;
+  mobileCartOpen = false;
 
   private scanFirstCharTime = 0;
   private searchSubject = new Subject<string>();

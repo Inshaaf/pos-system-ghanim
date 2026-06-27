@@ -56,3 +56,21 @@ html, body {
 ::-webkit-scrollbar-track { background: #f1f1f1; }
 ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #aaa; }
+
+// Mobile: touch-scroll Material tabs (no arrow buttons)
+@media (max-width: 767px) {
+  .mat-mdc-tab-header-pagination { display: none !important; }
+  .mat-mdc-tab-header {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    &::-webkit-scrollbar { display: none; }
+  }
+  .mat-mdc-tab-label-container {
+    overflow: visible !important;
+  }
+  .mat-mdc-tab-list {
+    flex-shrink: 0 !important;
+    transform: none !important;
+  }
+}

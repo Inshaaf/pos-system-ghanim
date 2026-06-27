@@ -57,6 +57,12 @@ import { StockRequestService, StockRequest } from '../../../core/services/stock.
               }
             </mat-select>
           </mat-form-field>
+          @if (isOwner) {
+            <button class="inactive-toggle" [class.active]="showInactive" (click)="toggleInactive()">
+              <mat-icon>{{ showInactive ? 'visibility' : 'visibility_off' }}</mat-icon>
+              {{ showInactive ? 'Showing All' : 'Show Inactive' }}
+            </button>
+          }
         </div>
       </mat-card>
 
@@ -151,27 +157,38 @@ import { StockRequestService, StockRequest } from '../../../core/services/stock.
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef></th>
             <td mat-cell *matCellDef="let p">
-              @if (isOwner) {
+              @if (isOwner && p.active) {
                 <button mat-icon-button (click)="openForm(p)" matTooltip="Edit">
                   <mat-icon>edit</mat-icon>
                 </button>
               }
-              <button mat-icon-button (click)="openStockAdjust(p)" [matTooltip]="isOwner ? 'Adjust Stock' : 'Request Stock Change'">
-                <mat-icon>tune</mat-icon>
-              </button>
-              <button mat-icon-button (click)="printLabel(p)" matTooltip="Print Label" [disabled]="!p.barcode">
-                <mat-icon>label</mat-icon>
-              </button>
-              @if (isOwner) {
-                <button mat-icon-button (click)="deactivate(p)" matTooltip="Deactivate" *ngIf="p.active">
-                  <mat-icon>block</mat-icon>
+              @if (p.active) {
+                <button mat-icon-button (click)="openStockAdjust(p)" [matTooltip]="isOwner ? 'Adjust Stock' : 'Request Stock Change'">
+                  <mat-icon>tune</mat-icon>
                 </button>
+                <button mat-icon-button (click)="printLabel(p)" matTooltip="Print Label" [disabled]="!p.barcode">
+                  <mat-icon>label</mat-icon>
+                </button>
+              }
+              @if (isOwner) {
+                @if (p.active) {
+                  <button mat-icon-button (click)="confirmDeactivate(p)" matTooltip="Deactivate" class="deactivate-btn">
+                    <mat-icon>block</mat-icon>
+                  </button>
+                } @else {
+                  <button mat-icon-button (click)="reactivate(p)" matTooltip="Reactivate" class="reactivate-btn">
+                    <mat-icon>check_circle</mat-icon>
+                  </button>
+                  <button mat-icon-button (click)="confirmDelete(p)" matTooltip="Delete permanently" class="delete-btn">
+                    <mat-icon>delete_forever</mat-icon>
+                  </button>
+                }
               }
             </td>
           </ng-container>
 
           <tr mat-header-row *matHeaderRowDef="cols"></tr>
-          <tr mat-row *matRowDef="let row; columns: cols;"></tr>
+          <tr mat-row *matRowDef="let row; columns: cols;" [class.inactive-row]="!row.active"></tr>
         </table>
         @if (products.length === 0) {
           <div class="empty-state">No products found</div>
@@ -206,6 +223,19 @@ import { StockRequestService, StockRequest } from '../../../core/services/stock.
     .active { background: #e8f5e9; color: #2e7d32; }
     .inactive { background: #fdecea; color: #c62828; }
     .empty-state { padding: 40px; text-align: center; color: #6b7280; }
+    .inactive-row { opacity: 0.55; background: #fafafa; }
+    .inactive-toggle {
+      display: flex; align-items: center; gap: 6px; align-self: center;
+      padding: 8px 16px; border: 1.5px solid #e2e6ec; border-radius: 8px;
+      background: #fff; color: #6b7280; font-size: 13px; font-weight: 600;
+      cursor: pointer; font-family: inherit; white-space: nowrap;
+      mat-icon { font-size: 18px; width: 18px; height: 18px; }
+      &:hover { border-color: #9ca3af; color: #1b3050; }
+      &.active { background: #1b3050; color: #fff; border-color: #1b3050; }
+    }
+    .deactivate-btn { color: #b45309 !important; }
+    .reactivate-btn { color: #2e7d32 !important; }
+    .delete-btn { color: #c62828 !important; }
     .requests-card { margin-bottom: 16px; padding: 0 !important; overflow: hidden; }
     .req-header { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid #eef0f4; }
     .req-title { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: #1b3050; }
@@ -219,6 +249,25 @@ import { StockRequestService, StockRequest } from '../../../core/services/stock.
     .req-actions { display: flex; gap: 8px; flex-shrink: 0; }
     .approve-btn { background: #2e7d32 !important; color: #fff !important; font-size: 12px !important; height: 32px !important; }
     .reject-btn { color: #c62828 !important; border-color: #c62828 !important; font-size: 12px !important; height: 32px !important; }
+
+    @media (max-width: 767px) {
+      .page-container { padding: 12px; }
+      .page-header { flex-direction: column; gap: 8px; }
+      .filter-card { padding: 12px !important; }
+      .filter-row { flex-wrap: wrap; gap: 8px; }
+      .search-field { min-width: 0; flex: 1 1 100%; }
+      .inactive-toggle { align-self: auto; }
+      .product-table { font-size: 12px; }
+      .thumb { width: 32px; height: 32px; }
+      .thumb-placeholder { width: 32px; height: 32px; }
+      .p-name { font-size: 12px; }
+
+      /* Hide less critical columns — keep product name, retail price, stock, actions */
+      .cdk-column-code,
+      .cdk-column-category,
+      .cdk-column-wholesale,
+      .cdk-column-status { display: none !important; }
+    }
   `]
 })
 export class ProductListComponent implements OnInit {
@@ -236,6 +285,7 @@ export class ProductListComponent implements OnInit {
   pendingRequests: StockRequest[] = [];
   search = '';
   categoryFilter: number | null = null;
+  showInactive = false;
   cols = ['name', 'code', 'category', 'retail', 'wholesale', 'stock', 'status', 'actions'];
 
   ngOnInit() {
@@ -271,17 +321,22 @@ export class ProductListComponent implements OnInit {
     const q = this.search.trim().toLowerCase();
     this.products = this.allProducts.filter(p => {
       const matchCat = !this.categoryFilter || p.categoryId === this.categoryFilter;
-      if (!q) return matchCat;
-      return matchCat && (
+      const matchSearch = !q || (
         p.name.toLowerCase().includes(q) ||
         (p.barcode?.toLowerCase().includes(q)) ||
         (p.categoryName?.toLowerCase().includes(q))
       );
+      return matchCat && matchSearch;
     });
   }
 
   loadProducts() {
-    this.productService.getAll().subscribe(p => { this.allProducts = p; this.applyFilter(); });
+    this.productService.getAll(undefined, undefined, this.showInactive).subscribe(p => { this.allProducts = p; this.applyFilter(); });
+  }
+
+  toggleInactive() {
+    this.showInactive = !this.showInactive;
+    this.loadProducts();
   }
 
   openForm(product?: Product) {
@@ -313,11 +368,28 @@ export class ProductListComponent implements OnInit {
     });
   }
 
-  deactivate(product: Product) {
-    const ref = this.snack.open(`Deactivate "${product.name}"?`, 'Deactivate', { duration: 4000 });
+  confirmDeactivate(product: Product) {
+    const ref = this.snack.open(`Deactivate "${product.name}"? It will be hidden from POS and sales.`, 'Deactivate', { duration: 5000 });
     ref.onAction().subscribe(() => {
       this.productService.delete(product.id).subscribe(() => {
         this.snack.open('Product deactivated', '', { duration: 2000 });
+        this.loadProducts();
+      });
+    });
+  }
+
+  reactivate(product: Product) {
+    this.productService.reactivate(product.id).subscribe(() => {
+      this.snack.open(`"${product.name}" reactivated`, '', { duration: 2000 });
+      this.loadProducts();
+    });
+  }
+
+  confirmDelete(product: Product) {
+    const ref = this.snack.open(`Permanently delete "${product.name}"? This cannot be undone.`, 'Delete', { duration: 6000, panelClass: ['snack-danger'] });
+    ref.onAction().subscribe(() => {
+      this.productService.hardDelete(product.id).subscribe(() => {
+        this.snack.open('Product permanently deleted', '', { duration: 2000 });
         this.loadProducts();
       });
     });

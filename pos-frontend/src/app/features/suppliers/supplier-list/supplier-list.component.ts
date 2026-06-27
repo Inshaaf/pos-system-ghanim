@@ -192,6 +192,13 @@ import { ReceiveGoodsDialogComponent } from '../receive-goods-dialog/receive-goo
     .empty-state { display: flex; flex-direction: column; align-items: center; padding: 60px; color: #6b7280; gap: 12px; }
     .empty-state mat-icon { font-size: 48px; width: 48px; height: 48px; }
     .empty-state p { font-size: 14px; }
+
+    @media (max-width: 767px) {
+      .page-container { padding: 12px; }
+      .page-header { flex-direction: column; gap: 8px; }
+      .summary-strip { flex-wrap: wrap; gap: 8px; }
+      .supplier-grid { grid-template-columns: 1fr !important; }
+    }
   `]
 })
 export class SupplierListComponent implements OnInit {

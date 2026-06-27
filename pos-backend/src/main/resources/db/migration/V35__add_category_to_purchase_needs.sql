@@ -1,0 +1,2 @@
+ALTER TABLE pos.purchase_needs
+    ADD COLUMN category VARCHAR(20) NOT NULL DEFAULT 'PURCHASE';

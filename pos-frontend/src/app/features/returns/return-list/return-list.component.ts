@@ -147,6 +147,16 @@ import { ReturnService } from '../../../core/services/sale.service';
     .item-qty { color: #6b7280; text-align: center; }
     .item-price { color: #6b7280; text-align: right; }
     .item-sub { font-weight: 600; color: #1b3050; text-align: right; }
+
+    @media (max-width: 767px) {
+      .page-container { padding: 12px; max-width: 100%; }
+      .page-header { flex-direction: column; gap: 8px; }
+      .summary-strip { flex-direction: column; gap: 8px; }
+      .card-header { flex-direction: column; align-items: flex-start; gap: 6px; }
+      .card-right { flex-wrap: wrap; }
+      .item-row { grid-template-columns: 1fr 50px 80px; }
+      .item-price { display: none; }
+    }
   `]
 })
 export class ReturnListComponent implements OnInit {
