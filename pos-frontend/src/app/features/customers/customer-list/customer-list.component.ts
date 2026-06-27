@@ -141,6 +141,24 @@ import { AuthService } from '../../../core/services/auth.service';
     table { width: 100%; }
     .delete-btn { color: #c62828; }
     th.mat-header-cell { font-weight: 700; color: #6b7280; font-size: 12px; }
+
+    @media (max-width: 767px) {
+      .page-container { padding: 12px; }
+      .page-header { flex-direction: column; gap: 8px; }
+      .search-field { max-width: 100%; }
+      .avatar { width: 28px; height: 28px; font-size: 12px; }
+
+      /* Hide less important columns on mobile — keep name, phone, actions */
+      .cdk-column-email,
+      .cdk-column-address,
+      .cdk-column-totalPurchases,
+      .cdk-column-totalSpent { display: none !important; }
+
+      /* Make name cell text truncate neatly */
+      .cdk-column-name { max-width: 160px; }
+      .name-cell strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 110px; display: block; }
+      table { font-size: 13px; }
+    }
   `]
 })
 export class CustomerListComponent implements OnInit {

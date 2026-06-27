@@ -160,10 +160,32 @@ public class ProductService {
         return toResponse(saved);
     }
 
+    @Transactional(readOnly = true)
+    public List<ProductResponse> getAllIncludingInactive(String search) {
+        List<Product> products = (search != null && !search.isBlank())
+                ? productRepository.searchAll(search)
+                : productRepository.findAllWithStock();
+        return products.stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
     public void delete(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + id));
         product.setActive(false);
+        productRepository.save(product);
+    }
+
+    public void hardDelete(Long id) {
+        if (!productRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Product not found: " + id);
+        }
+        productRepository.deleteById(id);
+    }
+
+    public void reactivate(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + id));
+        product.setActive(true);
         productRepository.save(product);
     }
 

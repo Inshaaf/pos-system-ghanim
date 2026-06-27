@@ -96,6 +96,24 @@ import { CreditPaymentDialogComponent } from './credit-payment-dialog/credit-pay
     .credit-right { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
     .amount { font-weight: 700; font-size: 16px; color: #f57f17; }
     .pay-btn { background: #2e7d32 !important; color: #fff !important; }
+
+    @media (max-width: 767px) {
+      .page-container { padding: 12px; }
+      .page-header { flex-direction: column; gap: 8px; }
+      .search-field { max-width: 100%; }
+
+      /* Stack the credit row: left info on top, right (amount + button) below */
+      .credit-row { flex-wrap: wrap; gap: 10px; padding: 12px; }
+      .credit-left { flex: 0 0 100%; }
+      .credit-right {
+        flex: 0 0 100%;
+        gap: 10px;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .amount { font-size: 16px; }
+      .pay-btn { flex: 1; }
+    }
   `]
 })
 export class CreditsComponent implements OnInit {

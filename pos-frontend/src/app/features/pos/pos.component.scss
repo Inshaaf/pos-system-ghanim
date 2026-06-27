@@ -901,6 +901,157 @@
   }
 }
 
+// ── Mobile Cart FAB ────────────────────────────────────────
+.mobile-cart-fab {
+  display: none;
+}
+.mobile-cart-overlay {
+  display: none;
+}
+.mobile-cart-close {
+  display: none;
+}
+
+// ── Mobile responsive ──────────────────────────────────────
+@media (max-width: 767px) {
+  // Header: 2-row layout — row 1: menu+title+buttons, row 2: search
+  .pos-header {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 8px 12px 6px;
+    gap: 0;
+    align-items: center;
+  }
+  .header-left { order: 1; gap: 6px; min-width: 0; flex: 0 0 auto; }
+  .header-left .icon-btn:first-child { display: none; }
+  .page-title { font-size: 15px; }
+  .header-right { order: 2; margin-left: auto; gap: 2px; }
+  .header-center {
+    order: 3;
+    flex: 0 0 100%;
+    max-width: 100%;
+    margin-top: 6px;
+  }
+  .search-kbd { display: none; }
+  .search-box { padding: 0 8px; height: 38px; }
+  .quick-sale-header-btn { padding: 6px 10px; font-size: 12px; gap: 3px; }
+  .quick-sale-header-btn mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+  // Let the native page scroll on mobile
+  :host { overflow: visible; flex: none; min-height: 0; display: block; }
+  .pos-wrapper { overflow: visible; }
+
+  // Body: stack product panel on top, cart hidden below
+  .pos-body { flex-direction: column; overflow: visible; }
+
+  // Product panel full width
+  .product-panel { overflow: visible; }
+
+  // Product grid: 2 columns, no inner scroll (page scrolls instead)
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 10px;
+    gap: 10px;
+    overflow-y: visible;
+    flex: none;
+  }
+
+  // Smaller product image on mobile
+  .product-image { height: 110px; }
+  .product-info { padding: 8px 10px 10px; }
+  .product-name { font-size: 12px; }
+  .product-price { font-size: 13px; }
+  .product-stock { font-size: 11px; }
+
+  // Category bar: horizontal scroll, no wrap
+  .category-bar { padding: 6px 10px; }
+  .cat-tabs { max-height: 36px; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; }
+  .cat-tab { font-size: 12px; padding: 4px 12px; }
+  .filter-btn { display: none; }
+
+  // Hide desktop cart panel, show FAB
+  .cart-panel {
+    position: fixed;
+    bottom: 60px; left: 0; right: 0;
+    height: 85vh;
+    border-radius: 20px 20px 0 0;
+    border-left: none;
+    border-top: 1px solid #e8e8e8;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.18);
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    z-index: 90;
+    &.mobile-open { transform: translateY(0); }
+  }
+
+  // Cart close handle (mobile only)
+  .mobile-cart-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 6px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af;
+    flex-shrink: 0;
+    mat-icon { font-size: 24px; width: 24px; height: 24px; }
+    &::before {
+      content: '';
+      display: block;
+      width: 40px; height: 4px;
+      background: #e2e6ec;
+      border-radius: 2px;
+      position: absolute;
+      top: 8px;
+    }
+  }
+
+  // Cart FAB button
+  .mobile-cart-fab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: fixed;
+    bottom: 70px;
+    right: 16px;
+    padding: 12px 18px;
+    background: #1b3050;
+    color: #fff;
+    border: none;
+    border-radius: 30px;
+    box-shadow: 0 4px 16px rgba(27,48,80,0.35);
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    z-index: 85;
+    mat-icon { font-size: 22px; width: 22px; height: 22px; }
+  }
+  .fab-badge {
+    position: absolute;
+    top: -6px; right: -6px;
+    background: #c62828; color: #fff;
+    font-size: 10px; font-weight: 700;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #fff;
+  }
+  .fab-total { font-size: 13px; font-weight: 600; }
+
+  // Overlay behind cart
+  .mobile-cart-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 89;
+  }
+}
+
+// ── Quick Sale header button ───────────────────────────────
 .quick-sale-header-btn {
   display: flex;
   align-items: center;

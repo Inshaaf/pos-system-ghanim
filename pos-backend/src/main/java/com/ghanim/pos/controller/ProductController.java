@@ -21,7 +21,11 @@ public class ProductController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getProducts(
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) Long categoryId) {
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false, defaultValue = "false") boolean includeInactive) {
+        if (includeInactive) {
+            return ResponseEntity.ok(ApiResponse.ok(productService.getAllIncludingInactive(search)));
+        }
         return ResponseEntity.ok(ApiResponse.ok(productService.getPosProducts(search, categoryId)));
     }
 
@@ -51,9 +55,21 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.ok(productService.nextBarcode(prefix)));
     }
 
+    @PatchMapping("/{id}/reactivate")
+    public ResponseEntity<ApiResponse<Void>> reactivate(@PathVariable Long id) {
+        productService.reactivate(id);
+        return ResponseEntity.ok(ApiResponse.ok(null, "Product reactivated"));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         productService.delete(id);
         return ResponseEntity.ok(ApiResponse.ok(null, "Product deactivated"));
+    }
+
+    @DeleteMapping("/{id}/permanent")
+    public ResponseEntity<ApiResponse<Void>> hardDelete(@PathVariable Long id) {
+        productService.hardDelete(id);
+        return ResponseEntity.ok(ApiResponse.ok(null, "Product permanently deleted"));
     }
 }

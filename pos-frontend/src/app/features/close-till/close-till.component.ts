@@ -146,6 +146,11 @@ import { SessionService } from '../../core/services/session.service';
     .no-session mat-icon { font-size: 48px; width: 48px; height: 48px; color: #d1d5db; display: block; margin: 0 auto 12px; }
     .no-session h2 { color: #1b3050; margin: 0 0 8px; }
     .no-session p { color: #6b7280; font-size: 14px; margin: 0; }
+
+    @media (max-width: 767px) {
+      .page-wrap { padding: 12px; min-height: auto; }
+      .till-card { max-width: 100%; }
+    }
   `]
 })
 export class CloseTillComponent implements OnInit {

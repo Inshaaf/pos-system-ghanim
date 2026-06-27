@@ -513,6 +513,14 @@ import { AuthService } from '../../core/services/auth.service';
     }
     .slug-chip.linked { background: #e3f2fd; color: #1565c0; }
     .slug-chip.unlinked { background: #f4f6f9; color: #9ca3af; font-style: italic; }
+
+    @media (max-width: 767px) {
+      .page-container { padding: 12px; max-width: 100%; }
+      .page-header { flex-direction: column; gap: 8px; }
+      .settings-card { padding: 16px !important; }
+      .sp-item { flex-wrap: wrap; gap: 8px; }
+      .printer-field { flex-direction: column; }
+    }
   `]
 })
 export class SettingsComponent implements OnInit {

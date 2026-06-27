@@ -234,6 +234,14 @@ import { OpenSessionDialogComponent } from '../pos/components/open-session-dialo
     .pending-count { display: flex; align-items: center; gap: 6px; color: #9ca3af; font-size: 13px; padding: 8px 0; }
     .pending-count mat-icon { font-size: 18px; width: 18px; height: 18px; }
     .cashier-notes { font-size: 12px; color: #6b7280; font-style: italic; margin-top: 8px; line-height: 1.4; }
+
+    @media (max-width: 767px) {
+      .page-container { padding: 12px; max-width: 100%; }
+      .page-header { flex-direction: column; gap: 8px; }
+      .reconciliation-grid { grid-template-columns: 1fr !important; }
+      .live-banner { flex-direction: column; gap: 8px; }
+      .sc-header { flex-direction: column; align-items: flex-start; gap: 6px; }
+    }
   `]
 })
 export class CashReconciliationComponent implements OnInit {

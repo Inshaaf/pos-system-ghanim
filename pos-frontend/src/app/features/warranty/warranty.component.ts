@@ -303,6 +303,15 @@ import { WarrantyClaimDialogComponent } from './warranty-claim-dialog.component'
     .resolve-actions { display: flex; justify-content: flex-end; gap: 10px; }
     .confirm-btn { background: #2e7d32 !important; color: #fff !important; }
     .reject-btn  { background: #c62828 !important; color: #fff !important; }
+
+    @media (max-width: 767px) {
+      .page-container { padding: 12px; max-width: 100%; }
+      .page-header { flex-direction: column; gap: 8px; }
+      .filter-row { flex-wrap: wrap; gap: 8px; }
+      .strip-card { flex-direction: column; gap: 8px; }
+      .claim-header { flex-direction: column; gap: 6px; }
+      .resolve-panel { width: calc(100vw - 32px); padding: 16px; }
+    }
   `]
 })
 export class WarrantyComponent implements OnInit {

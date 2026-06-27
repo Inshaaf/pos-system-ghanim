@@ -9,7 +9,7 @@ import { debounceTime, Subject } from 'rxjs';
 import { PurchaseNeedService } from '../../core/services/purchase-need.service';
 import { ShopSupplyService } from '../../core/services/shop-supply.service';
 import { AuthService } from '../../core/services/auth.service';
-import { PurchaseNeed, NeedStatus } from '../../core/models/purchase-need.model';
+import { PurchaseNeed, NeedStatus, NeedCategory } from '../../core/models/purchase-need.model';
 import { ShopSupply } from '../../core/models/shop-supply.model';
 
 type Tab = 'needed' | 'resolved' | 'all';
@@ -110,6 +110,24 @@ type Tab = 'needed' | 'resolved' | 'all';
             <span>New Purchase Need</span>
             <button class="close-form-btn" (click)="cancelAdd()"><mat-icon>close</mat-icon></button>
           </div>
+          <!-- Category selector -->
+          <div class="form-cat-selector">
+            <button class="form-cat-btn" [class.active]="form.category === 'STORE'" (click)="form.category = 'STORE'">
+              <mat-icon>storefront</mat-icon>
+              <div>
+                <div class="fcb-title">From Our Store</div>
+                <div class="fcb-sub">Take from our own stock</div>
+              </div>
+            </button>
+            <button class="form-cat-btn" [class.active]="form.category === 'PURCHASE'" (click)="form.category = 'PURCHASE'">
+              <mat-icon>shopping_cart</mat-icon>
+              <div>
+                <div class="fcb-title">Buy from Supplier</div>
+                <div class="fcb-sub">Purchase from outside</div>
+              </div>
+            </button>
+          </div>
+
           <div class="form-grid">
             <div class="form-field full">
               <label>Item Name *</label>
@@ -179,7 +197,24 @@ type Tab = 'needed' | 'resolved' | 'all';
         </div>
       }
 
-      <!-- Tabs -->
+      <!-- Category filter -->
+      <div class="category-filter">
+        <button class="cat-filter-btn" [class.active]="categoryFilter === null" (click)="categoryFilter = null">
+          All
+        </button>
+        <button class="cat-filter-btn store" [class.active]="categoryFilter === 'STORE'" (click)="categoryFilter = 'STORE'">
+          <mat-icon>storefront</mat-icon>
+          From Our Store
+          @if (storeCount > 0) { <span class="cf-count">{{ storeCount }}</span> }
+        </button>
+        <button class="cat-filter-btn purchase" [class.active]="categoryFilter === 'PURCHASE'" (click)="categoryFilter = 'PURCHASE'">
+          <mat-icon>shopping_cart</mat-icon>
+          Buy from Supplier
+          @if (purchaseCount > 0) { <span class="cf-count">{{ purchaseCount }}</span> }
+        </button>
+      </div>
+
+      <!-- Status tabs -->
       <div class="tab-bar">
         <button class="tab-btn" [class.active]="activeTab === 'needed'" (click)="activeTab = 'needed'">
           Pending
@@ -210,7 +245,13 @@ type Tab = 'needed' | 'resolved' | 'all';
                   <span class="status-dot" [class]="'dot-' + need.status.toLowerCase()"></span>
                 </div>
                 <div class="nc-body">
-                  <div class="nc-name">{{ need.name }}</div>
+                  <div class="nc-name-row">
+                    <span class="nc-name">{{ need.name }}</span>
+                    <span class="cat-badge" [class]="'cat-' + need.category.toLowerCase()">
+                      <mat-icon>{{ need.category === 'STORE' ? 'storefront' : 'shopping_cart' }}</mat-icon>
+                      {{ need.category === 'STORE' ? 'From Store' : 'Buy from Supplier' }}
+                    </span>
+                  </div>
                   <div class="nc-meta">
                     @if (need.quantity) {
                       <span class="meta-qty">{{ need.quantity }} {{ need.unit || '' }}</span>
@@ -239,6 +280,13 @@ type Tab = 'needed' | 'resolved' | 'all';
               </div>
 
               <div class="nc-actions">
+                @if (auth.isOwner()) {
+                  <button class="icon-action cat-toggle"
+                    [matTooltip]="need.category === 'STORE' ? 'Move to: Buy from Supplier' : 'Move to: From Our Store'"
+                    (click)="toggleCategory(need)">
+                    <mat-icon>{{ need.category === 'STORE' ? 'shopping_cart' : 'storefront' }}</mat-icon>
+                  </button>
+                }
                 @if (need.status === 'NEEDED') {
                   @if (auth.isOwner()) {
                     <button class="icon-action purchased" (click)="markPurchased(need)" matTooltip="Mark Purchased">
@@ -346,6 +394,51 @@ type Tab = 'needed' | 'resolved' | 'all';
     .dot-purchased { background: #10b981; }
     .dot-dismissed { background: #d1d5db; }
 
+    /* Category filter */
+    .category-filter { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+    .cat-filter-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 9px 18px; border: 1.5px solid #e2e6ec; border-radius: 10px;
+      background: #fff; color: #6b7280; font-size: 13px; font-weight: 600;
+      cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.15s;
+      mat-icon { font-size: 17px; width: 17px; height: 17px; }
+      &:hover { border-color: #9ca3af; color: #1b3050; }
+      &.active { border-color: #1b3050; color: #1b3050; background: #f0f4f8; }
+    }
+    .cat-filter-btn.store.active { border-color: #7b5ea7; color: #7b5ea7; background: #f5f0fc; }
+    .cat-filter-btn.purchase.active { border-color: #1b3050; color: #1b3050; background: #f0f4f8; }
+    .cf-count {
+      background: #f59e0b; color: #fff; font-size: 11px; font-weight: 700;
+      min-width: 18px; height: 18px; border-radius: 9px; padding: 0 5px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Category badge on card */
+    .nc-name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+    .nc-name { font-size: 15px; font-weight: 700; color: #1b3050; }
+    .cat-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; flex-shrink: 0;
+      mat-icon { font-size: 11px; width: 11px; height: 11px; }
+    }
+    .cat-store { background: #f5f0fc; color: #7b5ea7; }
+    .cat-purchase { background: #e8f0fe; color: #1b3050; }
+
+    /* Form category selector */
+    .form-cat-selector { display: flex; gap: 10px; margin-bottom: 16px; }
+    .form-cat-btn {
+      flex: 1; display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px; border: 1.5px solid #e2e6ec; border-radius: 10px;
+      background: #fff; cursor: pointer; font-family: 'Inter', sans-serif;
+      transition: all 0.15s; text-align: left;
+      mat-icon { font-size: 22px; color: #9ca3af; flex-shrink: 0; }
+      &:hover { border-color: #9ca3af; }
+      &.active { border-color: #1b3050; background: #f0f4f8; mat-icon { color: #1b3050; } }
+    }
+    .form-cat-btn:first-child.active { border-color: #7b5ea7; background: #f5f0fc; mat-icon { color: #7b5ea7; } }
+    .fcb-title { font-size: 13px; font-weight: 700; color: #1b3050; }
+    .fcb-sub { font-size: 11px; color: #6b7280; margin-top: 1px; }
+
     /* Add form */
     .add-form-card {
       background: #fff; border-radius: 12px; border: 1.5px solid #c9a84c;
@@ -433,7 +526,6 @@ type Tab = 'needed' | 'resolved' | 'all';
     .nc-dismissed { opacity: 0.5; }
     .status-dot-wrap { padding-top: 5px; }
     .nc-body { flex: 1; min-width: 0; }
-    .nc-name { font-size: 15px; font-weight: 700; color: #1b3050; margin-bottom: 4px; }
     .nc-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; font-size: 12px; color: #6b7280; }
     .meta-qty { font-weight: 600; color: #374151; }
     .meta-sep { color: #d1d5db; }
@@ -452,6 +544,7 @@ type Tab = 'needed' | 'resolved' | 'all';
     .icon-action.dismiss { background: #f3f4f6; color: #6b7280; &:hover { background: #e5e7eb; } }
     .icon-action.rerequest { background: #e0e7ff; color: #3730a3; &:hover { background: #c7d2fe; } }
     .icon-action.del { background: #fef2f2; color: #c62828; &:hover { background: #fee2e2; } }
+    .icon-action.cat-toggle { background: #f5f0fc; color: #7b5ea7; &:hover { background: #ede4f7; } }
 
     /* Action buttons in re-request panel */
     .action-purchased, .action-dismiss, .action-rerequest {
@@ -470,6 +563,13 @@ type Tab = 'needed' | 'resolved' | 'all';
     .empty-state p { font-size: 14px; }
     .spin { animation: spin 1s linear infinite; }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    @media (max-width: 767px) {
+      .page { padding: 14px; }
+      .category-filter { gap: 6px; }
+      .cat-filter-btn { font-size: 12px; padding: 7px 12px; }
+      .form-cat-selector { flex-direction: column; }
+    }
   `]
 })
 export class NeedsComponent implements OnInit {
@@ -485,23 +585,30 @@ export class NeedsComponent implements OnInit {
   loading = false;
   saving = false;
   activeTab: Tab = 'needed';
+  categoryFilter: NeedCategory | null = null;
   searchQuery = '';
   searchFocused = false;
   showDropdown = false;
   showAddForm = false;
   selectedNeed: PurchaseNeed | null = null;
 
-  form = { name: '', quantity: null as number | null, unit: '', notes: '', supplyItemId: null as number | null };
+  form = { name: '', quantity: null as number | null, unit: '', notes: '', category: 'PURCHASE' as NeedCategory, supplyItemId: null as number | null };
 
   private searchSubject = new Subject<string>();
 
-  get neededCount() { return this.needs.filter(n => n.status === 'NEEDED').length; }
+  get neededCount()   { return this.filteredByCategory.filter(n => n.status === 'NEEDED').length; }
+  get storeCount()    { return this.needs.filter(n => n.status === 'NEEDED' && n.category === 'STORE').length; }
+  get purchaseCount() { return this.needs.filter(n => n.status === 'NEEDED' && n.category === 'PURCHASE').length; }
+
+  private get filteredByCategory(): PurchaseNeed[] {
+    return this.categoryFilter ? this.needs.filter(n => n.category === this.categoryFilter) : this.needs;
+  }
 
   get displayNeeds(): PurchaseNeed[] {
-    const all = this.needs;
-    if (this.activeTab === 'needed') return all.filter(n => n.status === 'NEEDED');
-    if (this.activeTab === 'resolved') return all.filter(n => n.status !== 'NEEDED');
-    return all;
+    const base = this.filteredByCategory;
+    if (this.activeTab === 'needed')   return base.filter(n => n.status === 'NEEDED');
+    if (this.activeTab === 'resolved') return base.filter(n => n.status !== 'NEEDED');
+    return base;
   }
 
   ngOnInit() {
@@ -555,21 +662,21 @@ export class NeedsComponent implements OnInit {
   }
 
   prefillFromCatalog(supply: ShopSupply) {
-    this.form = { name: supply.name, quantity: null, unit: supply.unit, notes: '', supplyItemId: supply.id };
+    this.form = { name: supply.name, quantity: null, unit: supply.unit, notes: '', category: 'PURCHASE', supplyItemId: supply.id };
     this.showAddForm = true;
     this.showDropdown = false;
     this.searchQuery = '';
   }
 
   startAddFromSearch() {
-    this.form = { name: this.searchQuery.trim(), quantity: null, unit: '', notes: '', supplyItemId: null };
+    this.form = { name: this.searchQuery.trim(), quantity: null, unit: '', notes: '', category: 'PURCHASE', supplyItemId: null };
     this.showAddForm = true;
     this.showDropdown = false;
     this.searchQuery = '';
   }
 
   openAddForm() {
-    this.form = { name: '', quantity: null, unit: '', notes: '', supplyItemId: null };
+    this.form = { name: '', quantity: null, unit: '', notes: '', category: 'PURCHASE', supplyItemId: null };
     this.showAddForm = true;
     this.showDropdown = false;
     this.selectedNeed = null;
@@ -577,7 +684,7 @@ export class NeedsComponent implements OnInit {
 
   cancelAdd() {
     this.showAddForm = false;
-    this.form = { name: '', quantity: null, unit: '', notes: '', supplyItemId: null };
+    this.form = { name: '', quantity: null, unit: '', notes: '', category: 'PURCHASE', supplyItemId: null };
   }
 
   submitNeed() {
@@ -588,6 +695,7 @@ export class NeedsComponent implements OnInit {
       quantity: this.form.quantity ?? undefined,
       unit: this.form.unit || undefined,
       notes: this.form.notes || undefined,
+      category: this.form.category,
       requestedBy: this.auth.currentUser()?.name || 'Unknown',
       supplyItemId: this.form.supplyItemId ?? undefined
     }).subscribe({
@@ -599,6 +707,15 @@ export class NeedsComponent implements OnInit {
         this.snack.open(`"${created.name}" added to purchase needs`, '', { duration: 2500 });
       },
       error: () => { this.saving = false; this.snack.open('Failed to save', '', { duration: 2500 }); }
+    });
+  }
+
+  toggleCategory(need: PurchaseNeed) {
+    const next: NeedCategory = need.category === 'STORE' ? 'PURCHASE' : 'STORE';
+    this.needsService.updateCategory(need.id, next).subscribe(updated => {
+      this.updateNeed(updated);
+      const label = next === 'STORE' ? 'From Our Store' : 'Buy from Supplier';
+      this.snack.open(`"${need.name}" moved to ${label}`, '', { duration: 2500 });
     });
   }
 

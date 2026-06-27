@@ -29,6 +29,20 @@ import { SessionService } from '../../core/services/session.service';
       display: flex;
       flex-direction: column;
     }
+    @media (max-width: 767px) {
+      .app-shell {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+        overflow: visible;
+      }
+      .main-content {
+        overflow-y: visible;
+        padding-bottom: 70px;
+        flex: none;
+        min-height: 0;
+      }
+    }
   `]
 })
 export class MainLayoutComponent implements OnInit {

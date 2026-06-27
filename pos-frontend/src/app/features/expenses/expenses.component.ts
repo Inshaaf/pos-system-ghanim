@@ -464,6 +464,15 @@ import { Supplier, Salesperson, type TempWorker } from '../../core/models/produc
     .ledger-link {
       color: #1565c0; cursor: pointer; text-decoration: underline; font-weight: 600;
     }
+
+    @media (max-width: 767px) {
+      .page-container { padding: 12px; max-width: 100%; }
+      .page-header { flex-direction: column; gap: 8px; }
+      .quick-grid { flex-direction: column; }
+      .filter-row { flex-wrap: wrap; gap: 8px; }
+      .exp-row, .expense-row { flex-wrap: wrap; gap: 6px; }
+      .summary-card { padding: 12px !important; }
+    }
   `]
 })
 export class ExpensesComponent implements OnInit {

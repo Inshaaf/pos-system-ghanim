@@ -444,6 +444,10 @@ import {
     @media (max-width: 768px) {
       .stat-grid, .stat-grid.four { grid-template-columns: repeat(2, 1fr); }
       .row-cards { grid-template-columns: 1fr; }
+      .page-container { padding: 12px; }
+      .page-header { flex-direction: column; gap: 8px; }
+      .header-actions { flex-wrap: wrap; gap: 8px; }
+      .half-card { min-width: 0; }
     }
   `]
 })

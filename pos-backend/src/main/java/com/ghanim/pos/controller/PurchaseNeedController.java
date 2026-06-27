@@ -35,6 +35,12 @@ public class PurchaseNeedController {
         return service.updateStatus(id, status, body.get("resolvedBy"));
     }
 
+    @PatchMapping("/{id}/category")
+    public PurchaseNeed updateCategory(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        PurchaseNeed.Category category = PurchaseNeed.Category.valueOf(body.get("category").toUpperCase());
+        return service.updateCategory(id, category);
+    }
+
     @PatchMapping("/{id}/re-request")
     public PurchaseNeed reRequest(@PathVariable Long id, @RequestBody Map<String, String> body) {
         return service.reRequest(id, body.get("requestedBy"));

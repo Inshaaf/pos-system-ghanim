@@ -148,6 +148,20 @@ import { SaleDetailDialogComponent } from '../sale-detail-dialog/sale-detail-dia
     .sale-status.credit { background: #fff8e1; color: #f57f17; }
     .sale-status.cancelled { background: #fdecea; color: #c62828; }
     .sale-time { color: #aaa; font-size: 12px; min-width: 40px; }
+
+    @media (max-width: 767px) {
+      .page-container { padding: 16px; }
+      .page-header { flex-direction: column; gap: 10px; }
+      .header-actions { flex-wrap: wrap; }
+      .sale-row { flex-wrap: wrap; gap: 6px; padding: 10px 12px; }
+      .sale-id { min-width: 0; font-size: 12px; }
+      .sale-info { font-size: 12px; }
+      .sale-method { display: none; }
+      .sale-total { min-width: 0; font-size: 13px; text-align: left; flex: 1; }
+      .sale-time { min-width: 0; font-size: 11px; }
+      .sale-status { min-width: 0; font-size: 10px; padding: 2px 6px; }
+      .cust { max-width: 120px; }
+    }
   `]
 })
 export class SalesHistoryComponent implements OnInit {

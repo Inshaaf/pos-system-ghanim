@@ -30,7 +30,8 @@ interface NavItem {
         }
       </div>
 
-      <ul class="nav-list">
+      <!-- Desktop nav list -->
+      <ul class="nav-list desktop-nav">
         @for (item of visibleItems; track item.route) {
           <li>
             <a [routerLink]="item.route" routerLinkActive="active" class="nav-item"
@@ -42,6 +43,25 @@ interface NavItem {
             </a>
           </li>
         }
+      </ul>
+
+      <!-- Mobile bottom nav (pinned items) -->
+      <ul class="nav-list mobile-nav">
+        @for (item of mobileNavItems; track item.route) {
+          <li>
+            <a [routerLink]="item.route" routerLinkActive="active" class="nav-item">
+              <mat-icon>{{ item.icon }}</mat-icon>
+              <span>{{ item.label }}</span>
+            </a>
+          </li>
+        }
+        <!-- More button -->
+        <li>
+          <button class="nav-item more-btn" [class.more-open]="moreOpen" (click)="moreOpen = !moreOpen">
+            <mat-icon>{{ moreOpen ? 'close' : 'menu' }}</mat-icon>
+            <span>More</span>
+          </button>
+        </li>
       </ul>
 
       <div class="sidebar-footer">
@@ -66,6 +86,39 @@ interface NavItem {
         }
       </div>
     </nav>
+
+    <!-- Mobile more drawer overlay -->
+    @if (moreOpen) {
+      <div class="more-overlay" (click)="moreOpen = false">
+        <div class="more-drawer" (click)="$event.stopPropagation()">
+          <div class="more-header">
+            <div class="more-user">
+              <div class="more-avatar">{{ auth.currentUser()?.name?.charAt(0) }}</div>
+              <div>
+                <div class="more-name">{{ auth.currentUser()?.name }}</div>
+                <div class="more-role">{{ auth.currentUser()?.role === 'OWNER' ? 'Administrator' : 'Cashier' }}</div>
+              </div>
+            </div>
+          </div>
+          <ul class="more-nav-list">
+            @for (item of moreItems; track item.route) {
+              <li>
+                <a [routerLink]="item.route" routerLinkActive="active" class="more-nav-item"
+                   (click)="moreOpen = false">
+                  <mat-icon>{{ item.icon }}</mat-icon>
+                  <span>{{ item.label }}</span>
+                </a>
+              </li>
+            }
+          </ul>
+          <div class="more-footer">
+            <button class="more-logout-btn" (click)="handleLogout()">
+              <mat-icon>logout</mat-icon> Logout
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: [`
     :host {
@@ -86,6 +139,89 @@ interface NavItem {
     .sidebar.collapsed {
       width: 56px;
       min-width: 56px;
+    }
+
+    .mobile-nav { display: none; }
+
+    @media (max-width: 767px) {
+      :host { width: 100%; position: fixed; bottom: 0; left: 0; z-index: 100; height: auto; }
+      .sidebar {
+        width: 100% !important; min-width: 100% !important;
+        height: 60px; flex-direction: row;
+        overflow: visible;
+        border-top: 1px solid rgba(255,255,255,0.12);
+        box-shadow: 0 -2px 12px rgba(0,0,0,0.18);
+      }
+      .sidebar-logo { display: none !important; }
+      .desktop-nav { display: none !important; }
+      .sidebar-footer { display: none !important; }
+
+      .mobile-nav {
+        display: flex; flex-direction: row;
+        padding: 0; flex: 1; margin: 0;
+        overflow-x: auto; overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      .mobile-nav::-webkit-scrollbar { display: none; }
+      li { flex: 1; min-width: 56px; }
+      .nav-item, .more-btn {
+        flex-direction: column; gap: 2px;
+        padding: 6px 4px;
+        font-size: 9px; font-weight: 500;
+        border-left: none !important; border-bottom: 3px solid transparent;
+        border-radius: 0 !important; margin: 0 !important;
+        white-space: nowrap; justify-content: center; height: 60px;
+        width: 100%; background: transparent; border: none; cursor: pointer;
+        color: rgba(255,255,255,0.65); font-family: inherit; display: flex; align-items: center;
+        text-decoration: none;
+      }
+      .nav-item.active {
+        border-bottom-color: #c9a84c !important;
+        border-left: none !important; background: rgba(255,255,255,0.08);
+        color: #fff;
+      }
+      .more-btn.more-open { background: rgba(255,255,255,0.08); color: #fff; }
+      .nav-item mat-icon, .more-btn mat-icon { font-size: 21px; width: 21px; height: 21px; }
+    }
+
+    /* More overlay (mobile only) */
+    .more-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5); z-index: 200;
+      display: flex; align-items: flex-end;
+    }
+    .more-drawer {
+      width: 100%; background: #fff; border-radius: 20px 20px 0 0;
+      padding-bottom: 60px; max-height: 80vh; overflow-y: auto;
+    }
+    .more-header { padding: 16px 20px; border-bottom: 1px solid #eef0f4; }
+    .more-user { display: flex; align-items: center; gap: 12px; }
+    .more-avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: #1b3050; color: #c9a84c;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 700; flex-shrink: 0;
+    }
+    .more-name { font-size: 14px; font-weight: 700; color: #1b3050; }
+    .more-role { font-size: 12px; color: #6b7280; }
+    .more-nav-list { list-style: none; padding: 8px 0; margin: 0; }
+    .more-nav-item {
+      display: flex; align-items: center; gap: 14px;
+      padding: 13px 20px; text-decoration: none;
+      color: #374151; font-size: 14px; font-weight: 500;
+      transition: background 0.1s;
+      mat-icon { color: #6b7280; font-size: 20px; width: 20px; height: 20px; }
+      &:hover, &.active { background: #f4f6f9; color: #1b3050; mat-icon { color: #1b3050; } }
+      &.active { font-weight: 700; }
+    }
+    .more-footer { padding: 12px 20px; border-top: 1px solid #eef0f4; }
+    .more-logout-btn {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 0; background: none; border: none;
+      color: #c62828; font-size: 14px; font-weight: 500; cursor: pointer;
+      font-family: inherit;
+      mat-icon { font-size: 20px; width: 20px; height: 20px; }
     }
 
     .sidebar-logo {
@@ -173,6 +309,8 @@ export class SidebarComponent {
   private session = inject(SessionService);
   private router = inject(Router);
 
+  moreOpen = false;
+
   private navItems: NavItem[] = [
     { label: 'POS',          icon: 'point_of_sale',         route: '/pos' },
     { label: 'Products',     icon: 'inventory_2',            route: '/products' },
@@ -191,8 +329,22 @@ export class SidebarComponent {
     { label: 'Settings',     icon: 'settings',               route: '/settings' },
   ];
 
+  private mobileMainRoutes = ['/pos', '/sales', '/reports', '/expenses', '/needs'];
+
   get visibleItems(): NavItem[] {
     return this.navItems.filter(i => !i.ownerOnly || this.auth.isOwner());
+  }
+
+  get mobileNavItems(): NavItem[] {
+    return this.navItems.filter(i =>
+      this.mobileMainRoutes.includes(i.route) && (!i.ownerOnly || this.auth.isOwner())
+    );
+  }
+
+  get moreItems(): NavItem[] {
+    return this.navItems.filter(i =>
+      !this.mobileMainRoutes.includes(i.route) && (!i.ownerOnly || this.auth.isOwner())
+    );
   }
 
   handleLogout() {

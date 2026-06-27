@@ -12,7 +12,8 @@ import java.time.LocalDateTime;
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class PurchaseNeed {
 
-    public enum Status { NEEDED, PURCHASED, DISMISSED }
+    public enum Status   { NEEDED, PURCHASED, DISMISSED }
+    public enum Category { STORE, PURCHASE }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,6 +30,11 @@ public class PurchaseNeed {
     @Column(nullable = false)
     @Builder.Default
     private Status status = Status.NEEDED;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private Category category = Category.PURCHASE;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "supply_item_id")
