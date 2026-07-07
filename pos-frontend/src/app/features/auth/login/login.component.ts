@@ -56,7 +56,16 @@ import { AuthService } from '../../../core/services/auth.service';
           </button>
         </form>
 
-        <p class="footer-text">(c) {{ year }} Ghanim Enterprises "” Badulla, Sri Lanka</p>
+        <div class="demo-divider">
+          <span>or</span>
+        </div>
+
+        <button mat-stroked-button class="demo-btn" type="button" (click)="tryDemo()">
+          <mat-icon>play_circle_outline</mat-icon>
+          Try Demo
+        </button>
+
+        <p class="footer-text">(c) {{ year }} Ghanim Enterprises &mdash; Badulla, Sri Lanka</p>
       </mat-card>
     </div>
   `,
@@ -97,7 +106,21 @@ import { AuthService } from '../../../core/services/auth.service';
       font-size: 15px; font-weight: 600; border-radius: 8px !important;
       display: flex; align-items: center; justify-content: center;
     }
-    .footer-text { text-align: center; color: #aaa; font-size: 11px; margin-top: 28px; }
+    .demo-divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 20px 0 14px; color: #bbb; font-size: 12px;
+    }
+    .demo-divider::before, .demo-divider::after {
+      content: ''; flex: 1; height: 1px; background: #e0e0e0;
+    }
+    .demo-btn {
+      width: 100%; height: 44px;
+      border-color: #c9a84c !important; color: #c9a84c !important;
+      font-size: 14px; font-weight: 600; border-radius: 8px !important;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .demo-btn mat-icon { font-size: 20px; width: 20px; height: 20px; }
+    .footer-text { text-align: center; color: #aaa; font-size: 11px; margin-top: 24px; }
   `]
 })
 export class LoginComponent {
@@ -125,6 +148,9 @@ export class LoginComponent {
       error: () => { this.error = 'Invalid username or password'; this.loading = false; }
     });
   }
+
+  tryDemo() {
+    this.auth.loginDemo();
+    this.router.navigate(['/pos']);
+  }
 }
-
-

@@ -56,9 +56,17 @@ export class AuthService {
     return true;
   }
 
+  loginDemo() {
+    const demoUser: AuthUser = { token: 'DEMO_TOKEN', role: 'OWNER', name: 'Demo Owner', userId: 1 };
+    localStorage.setItem(this.TOKEN_KEY, 'DEMO_TOKEN');
+    localStorage.setItem(this.USER_KEY, JSON.stringify(demoUser));
+    this.currentUser.set(demoUser);
+  }
+
   private isTokenExpired(): boolean {
     const token = this.getToken();
     if (!token) return true;
+    if (token === 'DEMO_TOKEN') return false;
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       return Date.now() >= payload.exp * 1000;
