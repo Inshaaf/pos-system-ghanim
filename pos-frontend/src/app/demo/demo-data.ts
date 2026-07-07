@@ -63,7 +63,7 @@ export const DEMO_PRODUCTS: Product[] = [
     categoryId: 1, categoryName: 'Toys & Games',
     retailPrice: 1500, wholesalePrice: 1200, costPrice: 900,
     stockQuantity: 15, minStockAlert: 4, minWholesaleQty: 5,
-    unit: 'pcs', imageUrl: 'https://ik.imagekit.io/jljsfouwenlblj/pos/c1c0abf5e3ca4839.webp?updatedAt=1782756531550',
+    unit: 'pcs', imageUrl: 'https://ik.imagekit.io/jljsfouwenlblj/pos/8d5cf608497e4002.webp?updatedAt=1782756271771',
     emoji: '👧', active: true, showInPos: true, showOnline: false,
     productSource: 'SHOP_DIRECT', fulfillmentSource: 'SHOP',
   },
