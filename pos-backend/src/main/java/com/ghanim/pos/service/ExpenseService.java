@@ -4,10 +4,12 @@ import com.ghanim.pos.dto.request.ExpenseRequest;
 import com.ghanim.pos.entity.Expense;
 import com.ghanim.pos.entity.Salesperson;
 import com.ghanim.pos.entity.Supplier;
+import com.ghanim.pos.entity.Session;
 import com.ghanim.pos.exception.ResourceNotFoundException;
 import com.ghanim.pos.repository.ExpenseRepository;
 import com.ghanim.pos.repository.SalespersonRepository;
 import com.ghanim.pos.repository.SupplierRepository;
+import com.ghanim.pos.repository.SessionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +27,7 @@ public class ExpenseService {
     private final ExpenseRepository expenseRepository;
     private final SupplierRepository supplierRepository;
     private final SalespersonRepository salespersonRepository;
+    private final SessionRepository sessionRepository;
 
     @Transactional
     public Expense create(ExpenseRequest req) {
@@ -60,6 +63,12 @@ public class ExpenseService {
             supplierRepository.save(supplier);
         }
 
+        Long sessionId = req.getSessionId() != null
+                ? sessionRepository.findById(req.getSessionId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Session not found")).getId()
+                : sessionRepository.findFirstByStatusOrderByOpenedAtDesc("OPEN")
+                    .map(Session::getId).orElse(null);
+
         Expense expense = Expense.builder()
                 .category(req.getCategory())
                 .amount(req.getAmount())
@@ -68,6 +77,7 @@ public class ExpenseService {
                 .salesperson(salesperson)
                 .expenseDate(req.getExpenseDate() != null ? req.getExpenseDate() : LocalDate.now(ZoneId.of("Asia/Colombo")))
                 .cashMovementId(cashMovementId)
+                .sessionId(sessionId)
                 .build();
 
         return expenseRepository.save(expense);

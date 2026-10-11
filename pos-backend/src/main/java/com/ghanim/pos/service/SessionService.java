@@ -4,6 +4,7 @@ import com.ghanim.pos.entity.CashMovement;
 import com.ghanim.pos.entity.Session;
 import com.ghanim.pos.exception.ResourceNotFoundException;
 import com.ghanim.pos.repository.CashMovementRepository;
+import com.ghanim.pos.repository.ExpenseRepository;
 import com.ghanim.pos.repository.QuickSaleRepository;
 import com.ghanim.pos.repository.SaleRepository;
 import com.ghanim.pos.repository.SessionRepository;
@@ -28,6 +29,7 @@ public class SessionService {
     private final CashMovementRepository cashMovementRepository;
     private final SaleRepository saleRepository;
     private final QuickSaleRepository quickSaleRepository;
+    private final ExpenseRepository expenseRepository;
 
     public Optional<Session> getCurrentSession() {
         return sessionRepository.findFirstByStatusOrderByOpenedAtDesc("OPEN");
@@ -80,33 +82,19 @@ public class SessionService {
         session.setClosedAt(LocalDateTime.now());
         sessionRepository.save(session);
 
-        BigDecimal totalSales = saleRepository.findBySessionId(id).stream()
-                .filter(s -> "COMPLETED".equals(s.getStatus()) && "CASH".equals(s.getPaymentMethod()))
-                .map(s -> s.getTotal())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal cashIn = cashMovementRepository.findBySessionId(id).stream()
-                .filter(m -> "CASH_IN".equals(m.getType()))
-                .map(CashMovement::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal cashOut = cashMovementRepository.findBySessionId(id).stream()
-                .filter(m -> "CASH_OUT".equals(m.getType()))
-                .map(CashMovement::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal expected = session.getOpeningFloat().add(totalSales).add(cashIn).subtract(cashOut);
-        BigDecimal difference = closingCash.subtract(expected);
-
+        Map<String, Object> reconciliation = buildReconciliation(session);
         Map<String, Object> summary = new HashMap<>();
         summary.put("sessionId", id);
-        summary.put("openingFloat", session.getOpeningFloat());
-        summary.put("totalCashSales", totalSales);
-        summary.put("cashIn", cashIn);
-        summary.put("cashOut", cashOut);
-        summary.put("expectedCash", expected);
+        summary.put("openingFloat", reconciliation.get("openingFloat"));
+        summary.put("totalCashSales", reconciliation.get("cashSales"));
+        summary.put("quickSaleCash", reconciliation.get("quickSaleCash"));
+        summary.put("cashIn", reconciliation.get("cashIn"));
+        summary.put("cashOut", reconciliation.get("cashOut"));
+        summary.put("cashRefunds", reconciliation.get("cashRefunds"));
+        summary.put("expenses", reconciliation.get("expenses"));
+        summary.put("expectedCash", reconciliation.get("expectedCash"));
         summary.put("closingCash", closingCash);
-        summary.put("difference", difference);
+        summary.put("difference", reconciliation.get("difference"));
         summary.put("closedAt", session.getClosedAt());
         return summary;
     }
@@ -166,12 +154,17 @@ public class SessionService {
                 .map(CashMovement::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        BigDecimal expenses = expenseRepository.findBySessionIdAndCashMovementIdIsNull(id).stream()
+                .map(e -> e.getAmount() != null ? e.getAmount() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         LocalDateTime sessionFrom = session.getOpenedAt();
         LocalDateTime sessionTo = session.getClosedAt() != null ? session.getClosedAt() : LocalDateTime.now();
         BigDecimal quickSaleCash = quickSaleRepository.sumCashBetween(sessionFrom, sessionTo);
 
         BigDecimal opening = session.getOpeningFloat() != null ? session.getOpeningFloat() : BigDecimal.ZERO;
-        BigDecimal expected = opening.add(cashSales).add(quickSaleCash).add(cashIn).subtract(cashOut).subtract(cashRefunds);
+        BigDecimal expected = opening.add(cashSales).add(quickSaleCash).add(cashIn)
+                .subtract(cashOut).subtract(cashRefunds).subtract(expenses);
         BigDecimal difference = session.getClosingCash() != null
                 ? session.getClosingCash().subtract(expected)
                 : null;
@@ -188,6 +181,7 @@ public class SessionService {
         m.put("cashIn", cashIn);
         m.put("cashOut", cashOut);
         m.put("cashRefunds", cashRefunds);
+        m.put("expenses", expenses);
         m.put("expectedCash", expected);
         m.put("closingCash", session.getClosingCash());
         m.put("difference", difference);

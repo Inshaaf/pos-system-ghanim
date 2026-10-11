@@ -2,6 +2,7 @@ package com.ghanim.pos.controller;
 
 import com.ghanim.pos.dto.response.ApiResponse;
 import com.ghanim.pos.service.ShopCodeService;
+import com.ghanim.pos.service.ManagerPinService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,6 +16,14 @@ import java.util.Map;
 public class AppSettingController {
 
     private final ShopCodeService shopCodeService;
+    private final ManagerPinService managerPinService;
+
+    @PostMapping("/verify-manager-pin")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<ApiResponse<String>> verifyManagerPin(@RequestBody Map<String, String> body) {
+        managerPinService.verify(body.get("pin"));
+        return ResponseEntity.ok(ApiResponse.ok("verified"));
+    }
 
     @GetMapping("/shop-code-cipher")
     @PreAuthorize("hasRole('OWNER')")

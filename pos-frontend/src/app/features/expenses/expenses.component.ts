@@ -42,7 +42,7 @@ function colomboToday() {
       <div class="page-header">
         <div>
           <h1 class="page-title">Expenses</h1>
-          <p class="page-sub">Track daily shop expenses</p>
+          <p class="page-sub">Track daily shop expenses. Entries made during an open session reduce its expected cash.</p>
         </div>
         <input type="date" class="date-picker" [(ngModel)]="selectedDate" (ngModelChange)="onDateChange()" />
       </div>

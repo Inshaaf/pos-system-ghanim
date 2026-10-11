@@ -26,9 +26,7 @@ public class QuickSaleService {
     private final ManualProductRepository manualProductRepository;
     private final CustomerRepository customerRepository;
     private final StockService stockService;
-
-    @org.springframework.beans.factory.annotation.Value("${pos.manager.pin:1234}")
-    private String managerPin;
+    private final ManagerPinService managerPinService;
 
     @Transactional
     public Map<String, Object> create(Map<String, Object> request) {
@@ -195,9 +193,12 @@ public class QuickSaleService {
 
     @Transactional
     public void cancel(Long id, String pin, String reason) {
-        if (pin == null || !managerPin.equals(pin)) {
-            throw new IllegalArgumentException("Incorrect manager PIN");
-        }
+        managerPinService.verify(pin);
+        cancelAfterApproval(id, reason);
+    }
+
+    @Transactional
+    public void cancelAfterApproval(Long id, String reason) {
         if (reason == null || reason.isBlank()) {
             throw new IllegalArgumentException("Cancellation reason is required");
         }

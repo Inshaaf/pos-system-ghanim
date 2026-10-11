@@ -30,6 +30,7 @@ public class SaleService {
     private final CashMovementRepository cashMovementRepository;
     private final StockService stockService;
     private final QuickSaleService quickSaleService;
+    private final ManagerPinService managerPinService;
 
     @Transactional
     public Map<String, Object> checkout(CheckoutRequest request) {
@@ -229,14 +230,14 @@ public class SaleService {
         return m;
     }
 
-    @org.springframework.beans.factory.annotation.Value("${pos.manager.pin:1234}")
-    private String managerPin;
-
     @Transactional
     public void cancelSale(Long id, String pin, String reason) {
-        if (!managerPin.equals(pin)) {
-            throw new IllegalArgumentException("Incorrect manager PIN");
-        }
+        managerPinService.verify(pin);
+        cancelAfterApproval(id, reason);
+    }
+
+    @Transactional
+    public void cancelAfterApproval(Long id, String reason) {
         if (reason == null || reason.isBlank()) {
             throw new IllegalArgumentException("Cancellation reason is required");
         }

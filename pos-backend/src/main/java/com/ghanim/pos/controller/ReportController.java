@@ -33,6 +33,13 @@ public class ReportController {
         return ResponseEntity.ok(ApiResponse.ok(reportService.getRangeReport(from, to)));
     }
 
+    @GetMapping("/salespersons")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> salespersons(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return ResponseEntity.ok(ApiResponse.ok(reportService.getSalespersonReport(from, to)));
+    }
+
     @GetMapping("/products")
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> products(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,

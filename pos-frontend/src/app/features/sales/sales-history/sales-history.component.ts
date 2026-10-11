@@ -11,7 +11,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialogModule, MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { SaleService, QuickSaleService } from '../../../core/services/sale.service';
+import { SaleService, QuickSaleService, SaleCancellationRequestService } from '../../../core/services/sale.service';
 import { SalespersonService } from '../../../core/services/product.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { SaleDetailDialogComponent } from '../sale-detail-dialog/sale-detail-dialog.component';
@@ -44,6 +44,35 @@ import { SaleDetailDialogComponent } from '../sale-detail-dialog/sale-detail-dia
           </button>
         </div>
       </div>
+
+      @if (isOwner && cancellationRequests.length) {
+        <mat-card class="cancellation-requests-card">
+          <div class="cancellation-requests-heading">
+            <div>
+              <h2>Cancellation requests</h2>
+              <p>{{ cancellationRequests.length }} awaiting your review</p>
+            </div>
+            <mat-icon>notification_important</mat-icon>
+          </div>
+          @for (request of cancellationRequests; track request.id) {
+            <div class="cancellation-request-row">
+              <div class="cancellation-request-info">
+                <strong>{{ request.saleType === 'QUICK_SALE' ? 'Quick sale' : 'Sale' }} #{{ request.saleId }}</strong>
+                <span>{{ request.salesperson }} · {{ request.createdAt | date:'dd/MM/yyyy HH:mm':'+0530' }} · LKR {{ request.total | number:'1.2-2' }}</span>
+                <span>Requested by {{ request.requestedBy }}: {{ request.reason }}</span>
+              </div>
+              <div class="cancellation-request-actions">
+                <button mat-stroked-button (click)="reviewCancellationRequest(request, false)"
+                  [disabled]="reviewingRequestId === request.id">Reject</button>
+                <button mat-flat-button color="warn" (click)="reviewCancellationRequest(request, true)"
+                  [disabled]="reviewingRequestId === request.id">
+                  @if (reviewingRequestId === request.id) { <mat-spinner diameter="16" /> } @else { Approve & cancel }
+                </button>
+              </div>
+            </div>
+          }
+        </mat-card>
+      }
 
       @if (isOwner) {
         <section class="combined-total-card" aria-label="Combined sales total">
@@ -147,6 +176,16 @@ import { SaleDetailDialogComponent } from '../sale-detail-dialog/sale-detail-dia
     .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
     .page-title { font-size: 22px; font-weight: 700; color: #1b3050; margin: 0; }
     .page-sub { color: #888; font-size: 13px; margin: 4px 0 0; }
+    .cancellation-requests-card { margin: 0 0 16px; padding: 16px 18px !important; border: 1px solid #f0d5ba; background: #fffaf5; }
+    .cancellation-requests-heading { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .cancellation-requests-heading h2 { margin:0; color:#8b4513; font-size:16px; font-weight:700; }
+    .cancellation-requests-heading p { margin:3px 0 0; color:#98745d; font-size:12px; }
+    .cancellation-requests-heading mat-icon { color:#b66a28; }
+    .cancellation-request-row { display:flex; align-items:center; justify-content:space-between; gap:16px; border-top:1px solid #f2e5d8; padding:12px 0; }
+    .cancellation-request-info { display:flex; flex-direction:column; gap:3px; min-width:0; }
+    .cancellation-request-info strong { color:#273b53; font-size:13px; }
+    .cancellation-request-info span { color:#6b7280; font-size:12px; overflow-wrap:anywhere; }
+    .cancellation-request-actions { display:flex; gap:8px; flex-shrink:0; }
     .header-actions { display: flex; gap: 12px; align-items: center; }
     .date-input { border: 1px solid #ddd; border-radius: 6px; padding: 8px 12px; font-family: 'Inter', sans-serif; font-size: 14px; }
     .worker-select { border: 1px solid #ddd; border-radius: 6px; padding: 8px 12px; font-family: 'Inter', sans-serif; font-size: 14px; background: #fff; min-width: 170px; }
@@ -165,6 +204,11 @@ import { SaleDetailDialogComponent } from '../sale-detail-dialog/sale-detail-dia
     .book-check-btn { display:flex; align-items:center; justify-content:center; gap:6px; height:38px; border:1px solid #d8e0e9; border-radius:7px; padding:0 12px; background:#fff; color:#385976; font-family:inherit; font-size:13px; font-weight:650; cursor:pointer; white-space:nowrap; }
     .book-check-btn:hover { border-color:#1b4c7e; background:#eef5fc; color:#1b4c7e; }
     .book-check-btn mat-icon { font-size:18px; width:18px; height:18px; }
+
+    @media (max-width: 700px) {
+      .cancellation-request-row { align-items:stretch; flex-direction:column; }
+      .cancellation-request-actions { justify-content:flex-end; }
+    }
 
     .sales-tabs { }
     .tab-icon { font-size: 16px; width: 16px; height: 16px; margin-right: 6px; vertical-align: middle; }
@@ -229,6 +273,7 @@ export class SalesHistoryComponent implements OnInit {
   private snack = inject(MatSnackBar);
   private salespersonService = inject(SalespersonService);
   private auth = inject(AuthService);
+  private cancellationRequestService = inject(SaleCancellationRequestService);
 
   sales: any[] = [];
   quickSales: any[] = [];
@@ -236,6 +281,8 @@ export class SalesHistoryComponent implements OnInit {
   selectedSalespersonId: number | null = null;
   loading = false;
   qsLoading = false;
+  cancellationRequests: any[] = [];
+  reviewingRequestId: number | null = null;
   selectedDate = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
 
   get isOwner(): boolean { return this.auth.isOwner(); }
@@ -267,7 +314,35 @@ export class SalesHistoryComponent implements OnInit {
 
   ngOnInit() {
     this.salespersonService.getAll().subscribe({ next: workers => this.workers = workers.filter(w => w.active), error: () => this.workers = [] });
+    if (this.isOwner) this.loadCancellationRequests();
     this.load();
+  }
+
+  loadCancellationRequests() {
+    this.cancellationRequestService.getPending().subscribe({
+      next: requests => this.cancellationRequests = requests,
+      error: () => this.cancellationRequests = []
+    });
+  }
+
+  reviewCancellationRequest(request: any, approve: boolean) {
+    this.reviewingRequestId = request.id;
+    const review = approve
+      ? this.cancellationRequestService.approve(request.id)
+      : this.cancellationRequestService.reject(request.id);
+    review.subscribe({
+      next: () => {
+        this.reviewingRequestId = null;
+        this.snack.open(approve ? 'Sale cancelled and stock restored' : 'Cancellation request rejected', '', { duration: 2500 });
+        this.loadCancellationRequests();
+        if (approve) this.load();
+      },
+      error: err => {
+        this.reviewingRequestId = null;
+        this.snack.open(err?.error?.message || 'Could not review cancellation request', 'OK', { duration: 3500 });
+        this.loadCancellationRequests();
+      }
+    });
   }
 
   openBookCheck() {

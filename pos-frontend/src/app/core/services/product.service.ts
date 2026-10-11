@@ -123,6 +123,10 @@ export class SalespersonService {
   deactivate(id: number): Observable<Salesperson> {
     return this.http.patch<any>(`${environment.apiUrl}/salespersons/${id}/deactivate`, {}).pipe(map(r => r.data));
   }
+
+  activate(id: number): Observable<Salesperson> {
+    return this.http.patch<any>(`${environment.apiUrl}/salespersons/${id}/activate`, {}).pipe(map(r => r.data));
+  }
 }
 
 @Injectable({ providedIn: 'root' })
@@ -145,6 +149,10 @@ export class TempWorkerService {
 @Injectable({ providedIn: 'root' })
 export class AppSettingService {
   constructor(private http: HttpClient) {}
+
+  verifyManagerPin(pin: string): Observable<void> {
+    return this.http.post<any>(`${environment.apiUrl}/app-settings/verify-manager-pin`, { pin }).pipe(map(() => undefined));
+  }
 
   getCipher(): Observable<string> {
     return this.http.get<any>(`${environment.apiUrl}/app-settings/shop-code-cipher`).pipe(map(r => r.data));

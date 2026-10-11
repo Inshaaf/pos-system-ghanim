@@ -118,6 +118,12 @@ import { OpenSessionDialogComponent } from '../pos/components/open-session-dialo
                     <span class="rec-value minus">LKR {{ s.cashRefunds | number:'1.2-2' }}</span>
                   </div>
                 }
+                @if (s.expenses > 0) {
+                  <div class="rec-row">
+                    <span class="rec-label">− Direct Expenses</span>
+                    <span class="rec-value minus">LKR {{ s.expenses | number:'1.2-2' }}</span>
+                  </div>
+                }
                 <div class="rec-row total-row">
                   <span class="rec-label">= Expected in Till</span>
                   <span class="rec-value expected">LKR {{ s.expectedCash | number:'1.2-2' }}</span>

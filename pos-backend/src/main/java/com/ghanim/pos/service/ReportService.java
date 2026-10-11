@@ -141,6 +141,8 @@ public class ReportService {
         report.put("wholesaleAmount", wholesaleAmount);
         BigDecimal totalExpenses = expenseRepository.findByExpenseDateOrderByCreatedAtDesc(date)
                 .stream().map(Expense::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal cashExpenses = expenseRepository.findByExpenseDateAndCashMovementIdIsNull(date).stream()
+                .map(Expense::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal netProfit = totalProfit.subtract(totalExpenses);
 
         BigDecimal quickSaleTotal = quickSaleRepository.sumTotalBetween(from, to);
@@ -161,7 +163,9 @@ public class ReportService {
         cashSummary.put("cashIn", cashIn);
         cashSummary.put("cashOut", cashOut);
         cashSummary.put("cashRefunds", cashRefunds);
-        cashSummary.put("expectedCash", openingFloat.add(cashSales).add(quickSaleCash).add(cashIn).subtract(cashOut).subtract(cashRefunds));
+        cashSummary.put("cashExpenses", cashExpenses);
+        cashSummary.put("expectedCash", openingFloat.add(cashSales).add(quickSaleCash).add(cashIn)
+                .subtract(cashOut).subtract(cashRefunds).subtract(cashExpenses));
         cashSummary.put("cashOutByReason", cashOutByReason);
         report.put("cashSummary", cashSummary);
         report.put("paymentBreakdown", Map.of("cash", cashSales, "card", cardSales, "credit", creditSales));
@@ -284,6 +288,47 @@ public class ReportService {
         report.put("salespersonBreakdown", spBreakdown);
         report.put("paymentBreakdown", Map.of("cash", cashSales, "card", cardSales, "credit", creditSales));
         return report;
+    }
+
+    public List<Map<String, Object>> getSalespersonReport(LocalDate from, LocalDate to) {
+        LocalDateTime dtFrom = from.atStartOfDay();
+        LocalDateTime dtTo = to.atTime(23, 59, 59);
+        Map<Long, Map<String, Object>> totals = new HashMap<>();
+
+        for (Object[] row : saleRepository.salespersonSalesBetween(dtFrom, dtTo)) {
+            Long id = ((Number) row[0]).longValue();
+            Map<String, Object> data = totals.computeIfAbsent(id, key -> newSalespersonReportRow(id, String.valueOf(row[1])));
+            data.put("salesCount", ((Number) row[2]).longValue());
+            data.put("salesTotal", row[3]);
+        }
+
+        for (Object[] row : quickSaleRepository.salespersonQuickSalesBetween(dtFrom, dtTo)) {
+            Long id = ((Number) row[0]).longValue();
+            Map<String, Object> data = totals.computeIfAbsent(id, key -> newSalespersonReportRow(id, String.valueOf(row[1])));
+            data.put("quickSalesCount", ((Number) row[2]).longValue());
+            data.put("quickSalesTotal", row[3]);
+        }
+
+        return totals.values().stream().peek(data -> {
+            long regularCount = ((Number) data.get("salesCount")).longValue();
+            long quickCount = ((Number) data.get("quickSalesCount")).longValue();
+            BigDecimal regularTotal = (BigDecimal) data.get("salesTotal");
+            BigDecimal quickTotal = (BigDecimal) data.get("quickSalesTotal");
+            data.put("totalSalesCount", regularCount + quickCount);
+            data.put("totalAmount", regularTotal.add(quickTotal));
+        }).sorted((a, b) -> ((BigDecimal) b.get("totalAmount")).compareTo((BigDecimal) a.get("totalAmount")))
+                .toList();
+    }
+
+    private Map<String, Object> newSalespersonReportRow(Long id, String name) {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("id", id);
+        row.put("name", name);
+        row.put("salesCount", 0L);
+        row.put("salesTotal", BigDecimal.ZERO);
+        row.put("quickSalesCount", 0L);
+        row.put("quickSalesTotal", BigDecimal.ZERO);
+        return row;
     }
 
     // ── Product Report ───────────────────────────────────────────────────────
