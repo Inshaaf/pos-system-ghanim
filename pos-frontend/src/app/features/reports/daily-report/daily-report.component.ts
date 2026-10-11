@@ -10,7 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReportService } from '../../../core/services/report.service';
 import {
-  DailyReport, RangeReport, ProductStat, ManualItemStat, SlowStockItem, CashFlowDay
+  DailyReport, RangeReport, ProductStat, ManualItemStat, SlowStockItem, CashFlowDay, SalespersonSalesReport
 } from '../../../core/models/report.model';
 
 function colomboToday(): string {
@@ -105,6 +105,9 @@ function colomboToday(): string {
                   }
                   <div class="info-row"><span>Cash In</span><span>Rs {{ daily.cashSummary.cashIn | number:'1.0-0' }}</span></div>
                   <div class="info-row"><span>Cash Out</span><span class="red">-Rs {{ daily.cashSummary.cashOut | number:'1.0-0' }}</span></div>
+                  @if (daily.cashSummary.cashExpenses > 0) {
+                    <div class="info-row"><span>Direct Expenses</span><span class="red">-Rs {{ daily.cashSummary.cashExpenses | number:'1.0-0' }}</span></div>
+                  }
                   <div class="info-row bold"><span>Expected in Drawer</span><span>Rs {{ daily.cashSummary.expectedCash | number:'1.0-0' }}</span></div>
                   @for (e of cashOutEntries(daily); track e[0]) {
                     <div class="info-row sub"><span>-> {{ reasonLabel(e[0]) }}</span><span class="red">-Rs {{ e[1] | number:'1.0-0' }}</span></div>
@@ -180,6 +183,47 @@ function colomboToday(): string {
                 <div class="info-row"><span>Card</span><span>Rs {{ range.paymentBreakdown.card | number:'1.0-0' }}</span></div>
                 <div class="info-row"><span>Credit</span><span>Rs {{ range.paymentBreakdown.credit | number:'1.0-0' }}</span></div>
               </mat-card>
+            }
+          </div>
+        </mat-tab>
+
+        <mat-tab label="By Salesperson">
+          <div class="tab-body">
+            <div class="tab-controls">
+              <label class="ctrl-label">From</label>
+              <input type="date" class="date-inp" [(ngModel)]="salespersonFrom" />
+              <label class="ctrl-label">To</label>
+              <input type="date" class="date-inp" [(ngModel)]="salespersonTo" />
+              <button mat-flat-button class="run-btn" (click)="loadSalespersonReport()" [disabled]="salespersonLoading">
+                <mat-icon>bar_chart</mat-icon> Run
+              </button>
+            </div>
+
+            @if (salespersonLoading) { <div class="spin-center"><mat-spinner diameter="36"/></div> }
+            @else if (salespersonReport.length) {
+              <div class="stat-grid three">
+                <mat-card class="stat-card navy"><div class="sl">Salespeople with sales</div><div class="sv">{{ salespersonReport.length }}</div></mat-card>
+                <mat-card class="stat-card"><div class="sl">Transactions</div><div class="sv">{{ salespersonTransactionCount }}</div></mat-card>
+                <mat-card class="stat-card green"><div class="sl">Combined Sales</div><div class="sv sm">Rs {{ salespersonGrandTotal | number:'1.0-0' }}</div></mat-card>
+              </div>
+              <mat-card class="table-card">
+                <div class="card-title">Regular and quick sales by salesperson · {{ salespersonFrom }} to {{ salespersonTo }}</div>
+                <div class="cash-flow-table-wrap">
+                  <table mat-table [dataSource]="salespersonReport" class="rep-table">
+                    <ng-container matColumnDef="name"><th mat-header-cell *matHeaderCellDef>Salesperson</th><td mat-cell *matCellDef="let r"><strong>{{ r.name }}</strong></td></ng-container>
+                    <ng-container matColumnDef="salesCount"><th mat-header-cell *matHeaderCellDef>Regular sales</th><td mat-cell *matCellDef="let r">{{ r.salesCount }}</td></ng-container>
+                    <ng-container matColumnDef="salesTotal"><th mat-header-cell *matHeaderCellDef>Regular total</th><td mat-cell *matCellDef="let r">Rs {{ r.salesTotal | number:'1.0-0' }}</td></ng-container>
+                    <ng-container matColumnDef="quickSalesCount"><th mat-header-cell *matHeaderCellDef>Quick sales</th><td mat-cell *matCellDef="let r">{{ r.quickSalesCount }}</td></ng-container>
+                    <ng-container matColumnDef="quickSalesTotal"><th mat-header-cell *matHeaderCellDef>Quick total</th><td mat-cell *matCellDef="let r">Rs {{ r.quickSalesTotal | number:'1.0-0' }}</td></ng-container>
+                    <ng-container matColumnDef="totalAmount"><th mat-header-cell *matHeaderCellDef>Combined total</th><td mat-cell *matCellDef="let r"><strong>Rs {{ r.totalAmount | number:'1.0-0' }}</strong></td></ng-container>
+                    <tr mat-header-row *matHeaderRowDef="salespersonReportCols"></tr>
+                    <tr mat-row *matRowDef="let r; columns: salespersonReportCols;"></tr>
+                  </table>
+                </div>
+                <p class="report-note">Cancelled regular and quick sales are excluded.</p>
+              </mat-card>
+            } @else {
+              <div class="empty-hint">No regular or quick sales for the selected period.</div>
             }
           </div>
         </mat-tab>
@@ -408,6 +452,7 @@ function colomboToday(): string {
 
     /* Stat grid */
     .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .stat-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .stat-grid.four { grid-template-columns: repeat(4, 1fr); }
     .stat-grid.manual-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .stat-card { padding: 18px !important; }
@@ -426,6 +471,7 @@ function colomboToday(): string {
     .table-card { padding: 0 !important; overflow: hidden; }
     .cash-flow-table-wrap { max-width: 100%; overflow-x: auto; }
     .card-title { font-size: 14px; font-weight: 700; color: #1b3050; padding: 14px 16px 10px; }
+    .report-note { color:#78879a; font-size:12px; margin:8px 16px 12px; }
 
     /* Info rows */
     .info-row { display: flex; justify-content: space-between; padding: 9px 16px; border-bottom: 1px solid #f4f6f9; font-size: 13px; color: #1b3050; }
@@ -478,7 +524,7 @@ function colomboToday(): string {
     .sold-chip.zero { background: #fdecea; color: #c62828; }
 
     @media (max-width: 768px) {
-      .stat-grid, .stat-grid.four, .stat-grid.manual-summary { grid-template-columns: repeat(2, 1fr); }
+      .stat-grid, .stat-grid.four, .stat-grid.manual-summary, .stat-grid.three { grid-template-columns: repeat(2, 1fr); }
       .row-cards { grid-template-columns: 1fr; }
       .page-container { padding: 12px; }
       .page-header { flex-direction: column; gap: 8px; }
@@ -500,6 +546,13 @@ export class DailyReportComponent implements OnInit {
   rangeTo = colomboToday();
   range: RangeReport | null = null;
   rangeLoading = false;
+
+  // Salesperson report
+  salespersonFrom = this.monthStart();
+  salespersonTo = colomboToday();
+  salespersonReport: SalespersonSalesReport[] = [];
+  salespersonLoading = false;
+  salespersonReportCols = ['name', 'salesCount', 'salesTotal', 'quickSalesCount', 'quickSalesTotal', 'totalAmount'];
 
   // Products
   prodFrom = this.monthStart();
@@ -544,6 +597,8 @@ export class DailyReportComponent implements OnInit {
   get cfTotalCashRev() { return this.cashFlow.reduce((s, d) => s + d.cashRevenue + d.quickSaleCash, 0); }
   get cfTotalExp() { return this.cashFlow.reduce((s, d) => s + d.expenses, 0); }
   get cfNet() { return this.cashFlow.reduce((s, d) => s + d.net, 0); }
+  get salespersonTransactionCount() { return this.salespersonReport.reduce((sum, row) => sum + row.totalSalesCount, 0); }
+  get salespersonGrandTotal() { return this.salespersonReport.reduce((sum, row) => sum + row.totalAmount, 0); }
 
   private readonly reasonLabels: Record<string, string> = {
     CHARITY: 'Charity', SHOP_EXPENSE: 'Shop Expense', TRANSPORT: 'Transport',
@@ -565,6 +620,7 @@ export class DailyReportComponent implements OnInit {
   ngOnInit() {
     this.loadDaily();
     this.loadSlowStock();
+    this.loadSalespersonReport();
   }
 
   loadDaily() {
@@ -580,6 +636,15 @@ export class DailyReportComponent implements OnInit {
     this.reportService.getRange(this.rangeFrom, this.rangeTo).subscribe({
       next: r => { this.range = r; this.rangeLoading = false; },
       error: () => { this.rangeLoading = false; }
+    });
+  }
+
+  loadSalespersonReport() {
+    if (!this.salespersonFrom || !this.salespersonTo || this.salespersonFrom > this.salespersonTo) return;
+    this.salespersonLoading = true;
+    this.reportService.getSalespersonReport(this.salespersonFrom, this.salespersonTo).subscribe({
+      next: rows => { this.salespersonReport = rows; this.salespersonLoading = false; },
+      error: () => { this.salespersonReport = []; this.salespersonLoading = false; }
     });
   }
 

@@ -46,6 +46,9 @@ public class Expense {
     @Column(name = "cash_movement_id", unique = true)
     private Long cashMovementId;
 
+    @Column(name = "session_id")
+    private Long sessionId;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 }

@@ -17,6 +17,16 @@ public interface QuickSaleRepository extends JpaRepository<QuickSale, Long> {
 
     long countByCreatedAtBetweenAndStatusNot(LocalDateTime from, LocalDateTime to, String status);
 
+    @Query("""
+        SELECT qs.salesperson.id, qs.salesperson.name, COUNT(qs), COALESCE(SUM(qs.total), 0)
+        FROM QuickSale qs
+        WHERE qs.createdAt BETWEEN :from AND :to AND qs.status <> 'CANCELLED'
+          AND qs.salesperson IS NOT NULL
+        GROUP BY qs.salesperson.id, qs.salesperson.name
+        """)
+    List<Object[]> salespersonQuickSalesBetween(@Param("from") LocalDateTime from,
+                                                @Param("to") LocalDateTime to);
+
     @Query("SELECT COALESCE(SUM(qs.total), 0) FROM QuickSale qs WHERE qs.createdAt BETWEEN :from AND :to AND qs.status <> 'CANCELLED'")
     BigDecimal sumTotalBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 

@@ -38,4 +38,9 @@ public class SalespersonController {
     public ResponseEntity<ApiResponse<Salesperson>> deactivate(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(salespersonService.deactivate(id), "Salesperson deactivated"));
     }
+
+    @PatchMapping("/{id}/activate")
+    public ResponseEntity<ApiResponse<Salesperson>> activate(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok(salespersonService.activate(id), "Salesperson activated"));
+    }
 }

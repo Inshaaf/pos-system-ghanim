@@ -54,6 +54,7 @@ public class CashService {
             expense.setCategory(category);
             expense.setAmount(request.getAmount());
             expense.setSupplierId(request.getSupplierId());
+            expense.setSessionId(session.getId());
             expense.setExpenseDate(java.time.LocalDate.now(java.time.ZoneId.of("Asia/Colombo")));
             expense.setNote("Cash Out — " + request.getReason() +
                     (request.getNotes() == null || request.getNotes().isBlank() ? "" : ": " + request.getNotes()));

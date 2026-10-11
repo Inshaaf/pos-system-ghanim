@@ -59,7 +59,7 @@ import { UserService, AppUser } from '../../core/services/user.service';
                     <button class="icon-action-btn deactivate" (click)="deactivateSp(sp)" title="Deactivate">
                       <mat-icon>block</mat-icon>
                     </button>
-                  } @else if (auth.isOwner()) {
+                  } @else if (auth.isOwner() || auth.isCashier()) {
                     <button class="icon-action-btn activate" (click)="activateSp(sp)" title="Activate">
                       <mat-icon>check_circle</mat-icon>
                     </button>
@@ -325,6 +325,18 @@ import { UserService, AppUser } from '../../core/services/user.service';
       <mat-card class="settings-card">
         <h3 class="section-title">Shop Code Cipher</h3>
         <p class="cat-hint">10-letter key used to encode cost prices in product shop codes. Keep this secret.</p>
+        @if (!cipherUnlocked) {
+        <div class="add-row" style="margin-top:8px">
+          <input class="add-input" [(ngModel)]="cipherPin" placeholder="Manager PIN"
+            type="password" inputmode="numeric" autocomplete="off"
+            (keydown.enter)="unlockCipher()" />
+          <button mat-flat-button class="add-btn" (click)="unlockCipher()"
+            [disabled]="!cipherPin || unlockingCipher">
+            @if (unlockingCipher) { <mat-spinner diameter="16" /> } @else { <mat-icon>lock_open</mat-icon> Unlock }
+          </button>
+        </div>
+        <p class="cat-hint" style="margin-top:8px">Enter the manager PIN to view or update the cipher.</p>
+        } @else {
         <div class="add-row" style="margin-top:8px">
           <div style="position:relative; flex:1">
             <input class="add-input" [(ngModel)]="cipherKey" placeholder="e.g. AAAAAAAAAA"
@@ -341,6 +353,8 @@ import { UserService, AppUser } from '../../core/services/user.service';
           </button>
         </div>
         <p class="cat-hint" style="margin-top:8px">Must be exactly 10 unique letters. Position 1–9 = digits 1–9, position 10 = 0.</p>
+        <button mat-button type="button" (click)="lockCipher()"><mat-icon>lock</mat-icon> Lock cipher</button>
+        }
       </mat-card>
       }
 
@@ -702,6 +716,9 @@ export class SettingsComponent implements OnInit {
   cipherKey = '';
   cipherVisible = false;
   savingCipher = false;
+  cipherPin = '';
+  cipherUnlocked = false;
+  unlockingCipher = false;
 
   // User account management
   appUsers: AppUser[] = [];
@@ -736,7 +753,6 @@ export class SettingsComponent implements OnInit {
     this.autoPrintEnabled = localStorage.getItem('pos_auto_print') !== 'false';
     this.paperWidth = localStorage.getItem('pos_paper_width') || '80';
     if (this.auth.isOwner()) {
-      this.appSettingService.getCipher().subscribe(v => this.cipherKey = v || '');
       this.userService.getAll().subscribe(users => {
         this.appUsers = users;
         this.currentUserId = this.auth.currentUser()?.userId ?? null;
@@ -832,6 +848,36 @@ export class SettingsComponent implements OnInit {
     });
   }
 
+  unlockCipher() {
+    if (!this.cipherPin || this.unlockingCipher) return;
+    this.unlockingCipher = true;
+    this.appSettingService.verifyManagerPin(this.cipherPin).subscribe({
+      next: () => this.appSettingService.getCipher().subscribe({
+        next: value => {
+          this.cipherKey = value || '';
+          this.cipherUnlocked = true;
+          this.cipherPin = '';
+          this.unlockingCipher = false;
+        },
+        error: () => {
+          this.unlockingCipher = false;
+          this.snack.open('Could not load cipher', 'OK', { duration: 3000 });
+        }
+      }),
+      error: () => {
+        this.unlockingCipher = false;
+        this.cipherPin = '';
+        this.snack.open('Incorrect manager PIN', 'OK', { duration: 3000 });
+      }
+    });
+  }
+
+  lockCipher() {
+    this.cipherKey = '';
+    this.cipherVisible = false;
+    this.cipherUnlocked = false;
+  }
+
   // â”€â”€ Salesperson edit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   startEdit(sp: Salesperson) {
@@ -865,7 +911,7 @@ export class SettingsComponent implements OnInit {
   }
 
   activateSp(sp: Salesperson) {
-    this.spService.update(sp.id, sp.name, true).subscribe(() => {
+    this.spService.activate(sp.id).subscribe(() => {
       this.spService.getAll().subscribe(s => this.salespersons = s);
       this.snack.open('Salesperson activated', '', { duration: 1500 });
     });

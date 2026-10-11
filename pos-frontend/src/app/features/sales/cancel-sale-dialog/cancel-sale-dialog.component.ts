@@ -8,7 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { QuickSaleService, SaleService } from '../../../core/services/sale.service';
+import { QuickSaleService, SaleService, SaleCancellationRequestService } from '../../../core/services/sale.service';
 
 const REASONS = [
   'Customer Request',
@@ -32,8 +32,8 @@ const REASONS = [
       <div class="dialog-header">
         <mat-icon class="warn-icon">warning</mat-icon>
         <div>
-          <h2>Cancel {{ data.quickSale ? 'Quick Sale' : 'Sale' }} #{{ data.saleId }}</h2>
-          <p class="sub">This will restore stock. Requires manager approval.</p>
+          <h2>{{ data.requestMode ? 'Request cancellation' : 'Cancel' }} {{ data.quickSale ? 'Quick Sale' : 'Sale' }} #{{ data.saleId }}</h2>
+          <p class="sub">{{ data.requestMode ? 'An owner must approve this request before the sale is cancelled.' : 'This will restore stock after manager approval.' }}</p>
         </div>
       </div>
 
@@ -46,6 +46,7 @@ const REASONS = [
         </mat-select>
       </mat-form-field>
 
+      @if (!data.requestMode) {
       <mat-form-field appearance="outline" class="full">
         <mat-label>Manager PIN</mat-label>
         <input matInput type="password" [(ngModel)]="pin"
@@ -53,6 +54,7 @@ const REASONS = [
           (keydown.enter)="confirm()" />
         <mat-icon matSuffix>lock</mat-icon>
       </mat-form-field>
+      }
 
       @if (errorMsg) {
         <div class="error-msg">
@@ -63,8 +65,8 @@ const REASONS = [
       <div mat-dialog-actions class="actions">
         <button mat-button (click)="dialogRef.close()">BACK</button>
         <button mat-flat-button class="cancel-btn" (click)="confirm()"
-          [disabled]="loading || !reason || !pin">
-          @if (loading) { <mat-spinner diameter="18" /> } @else { CONFIRM CANCEL }
+          [disabled]="loading || !reason || (!data.requestMode && !pin)">
+          @if (loading) { <mat-spinner diameter="18" /> } @else { {{ data.requestMode ? 'SEND REQUEST' : 'CONFIRM CANCEL' }} }
         </button>
       </div>
     </div>
@@ -91,6 +93,7 @@ export class CancelSaleDialogComponent {
   data: any = inject(MAT_DIALOG_DATA);
   private saleService = inject(SaleService);
   private quickSaleService = inject(QuickSaleService);
+  private cancellationRequestService = inject(SaleCancellationRequestService);
 
   reasons = REASONS;
   reason = '';
@@ -99,14 +102,16 @@ export class CancelSaleDialogComponent {
   errorMsg = '';
 
   confirm() {
-    if (!this.reason || !this.pin) return;
+    if (!this.reason || (!this.data.requestMode && !this.pin)) return;
     this.loading = true;
     this.errorMsg = '';
-    const cancelRequest = this.data.quickSale
-      ? this.quickSaleService.cancel(this.data.saleId, this.pin, this.reason)
-      : this.saleService.cancel(this.data.saleId, this.pin, this.reason);
-    cancelRequest.subscribe({
-      next: () => this.dialogRef.close('cancelled'),
+    const request = this.data.requestMode
+      ? this.cancellationRequestService.request(this.data.quickSale ? 'QUICK_SALE' : 'SALE', this.data.saleId, this.reason)
+      : this.data.quickSale
+        ? this.quickSaleService.cancel(this.data.saleId, this.pin, this.reason)
+        : this.saleService.cancel(this.data.saleId, this.pin, this.reason);
+    request.subscribe({
+      next: () => this.dialogRef.close(this.data.requestMode ? 'requested' : 'cancelled'),
       error: err => {
         this.loading = false;
         this.errorMsg = err.error?.message || 'Cancellation failed';

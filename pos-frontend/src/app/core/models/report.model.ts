@@ -45,6 +45,17 @@ export interface SalespersonBreakdown {
   profit?: number;
 }
 
+export interface SalespersonSalesReport {
+  id: number;
+  name: string;
+  salesCount: number;
+  salesTotal: number;
+  quickSalesCount: number;
+  quickSalesTotal: number;
+  totalSalesCount: number;
+  totalAmount: number;
+}
+
 export interface ProductStat {
   productId: number;
   productName: string;
@@ -79,6 +90,7 @@ export interface CashFlowDay {
   quickSaleCash: number;
   cashIn: number;
   cashOut: number;
+  cashExpenses: number;
   cashRefunds: number;
   expenses: number;
   net: number;
@@ -90,6 +102,7 @@ export interface CashSummary {
   quickSaleCash: number;
   cashIn: number;
   cashOut: number;
+  cashExpenses: number;
   expectedCash: number;
   cashOutByReason: Record<string, number>;
 }

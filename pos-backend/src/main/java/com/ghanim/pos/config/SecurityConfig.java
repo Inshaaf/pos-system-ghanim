@@ -68,6 +68,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/manual-products").hasRole("OWNER")
                         .requestMatchers(HttpMethod.DELETE, "/api/manual-products/**").hasRole("OWNER")
                         .requestMatchers(HttpMethod.POST, "/api/quick-sales/*/cancel").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.POST, "/api/app-settings/verify-manager-pin").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.GET, "/api/app-settings/shop-code-cipher").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.PUT, "/api/app-settings/shop-code-cipher").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.POST, "/api/cancellation-requests").hasRole("CASHIER")
+                        .requestMatchers(HttpMethod.GET, "/api/cancellation-requests").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/cancellation-requests/*/approve",
+                                "/api/cancellation-requests/*/reject").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.POST, "/api/sales/*/cancel").hasRole("OWNER")
                         .requestMatchers(HttpMethod.GET, "/api/purchase-needs")
                                 .hasAnyRole("OWNER", "CASHIER", "SALESPERSON", "STORE_PERSON")
                         .requestMatchers(HttpMethod.POST, "/api/purchase-needs")
@@ -84,6 +92,8 @@ public class SecurityConfig {
                                 "/api/suppliers",
                                 "/api/salespersons").hasRole("OWNER")
                         .requestMatchers(HttpMethod.PATCH, "/api/salespersons/*/deactivate")
+                                .hasAnyRole("OWNER", "CASHIER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/salespersons/*/activate")
                                 .hasAnyRole("OWNER", "CASHIER")
                         .requestMatchers(HttpMethod.POST, "/api/products").authenticated()
                         .requestMatchers(HttpMethod.PUT,

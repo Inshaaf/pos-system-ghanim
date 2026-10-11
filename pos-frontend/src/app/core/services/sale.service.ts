@@ -8,6 +8,28 @@ import { CheckoutRequest, HeldSale } from '../models/sale.model';
 export interface ManualQuickProduct { id: number; name: string; unitPrice: number; active?: boolean; }
 
 @Injectable({ providedIn: 'root' })
+export class SaleCancellationRequestService {
+  private base = `${environment.apiUrl}/cancellation-requests`;
+  constructor(private http: HttpClient) {}
+
+  request(saleType: 'SALE' | 'QUICK_SALE', saleId: number, reason: string): Observable<any> {
+    return this.http.post<any>(this.base, { saleType, saleId, reason }).pipe(map(r => r.data));
+  }
+
+  getPending(): Observable<any[]> {
+    return this.http.get<any>(this.base).pipe(map(r => r.data));
+  }
+
+  approve(id: number): Observable<any> {
+    return this.http.patch<any>(`${this.base}/${id}/approve`, {}).pipe(map(r => r.data));
+  }
+
+  reject(id: number): Observable<any> {
+    return this.http.patch<any>(`${this.base}/${id}/reject`, {}).pipe(map(r => r.data));
+  }
+}
+
+@Injectable({ providedIn: 'root' })
 export class SaleService {
   private base = `${environment.apiUrl}/sales`;
 

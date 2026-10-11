@@ -10,6 +10,7 @@ export interface Expense {
   expenseDate: string;
   createdAt: string;
   cashMovementId?: number;
+  sessionId?: number;
 }
 
 export interface ExpenseRequest {

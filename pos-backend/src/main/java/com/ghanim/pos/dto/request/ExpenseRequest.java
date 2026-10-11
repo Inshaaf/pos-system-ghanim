@@ -14,4 +14,5 @@ public class ExpenseRequest {
     private Long supplierId;
     private Long salespersonId;
     private LocalDate expenseDate;
+    private Long sessionId;
 }

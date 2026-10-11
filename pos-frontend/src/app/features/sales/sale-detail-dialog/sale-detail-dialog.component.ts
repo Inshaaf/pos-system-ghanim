@@ -87,16 +87,16 @@ import { AuthService } from '../../../core/services/auth.service';
             REPRINT
           </button>
         }
-        @if (sale.status === 'COMPLETED') {
-          @if (!isQuickSale || isOwner) {
+        @if (sale.status === 'COMPLETED' || (isQuickSale && sale.status === 'CREDIT')) {
+          @if (isOwner) {
             <button mat-stroked-button class="cancel-btn" (click)="cancelSale()">
               CANCEL SALE
             </button>
+          } @else if (isCashier) {
+            <button mat-stroked-button class="cancel-btn" (click)="requestCancel()">
+              REQUEST CANCELLATION
+            </button>
           }
-        } @else if (isQuickSale && sale.status === 'CREDIT' && isOwner) {
-          <button mat-stroked-button class="cancel-btn" (click)="cancelSale()">
-            CANCEL SALE
-          </button>
         }
       </div>
     </div>
@@ -143,6 +143,7 @@ export class SaleDetailDialogComponent {
   private auth = inject(AuthService);
 
   get isOwner(): boolean { return this.auth.isOwner(); }
+  get isCashier(): boolean { return this.auth.isCashier(); }
 
   reprinting = false;
 
@@ -187,6 +188,19 @@ export class SaleDetailDialogComponent {
       if (result === 'cancelled') {
         this.snack.open(`${this.isQuickSale ? 'Quick sale' : 'Sale'} cancelled and stock restored`, '', { duration: 2500 });
         this.dialogRef.close('cancelled');
+      }
+    });
+  }
+
+  requestCancel() {
+    const ref = this.dialog.open(CancelSaleDialogComponent, {
+      width: '420px',
+      data: { saleId: this.sale.id, quickSale: this.isQuickSale, requestMode: true }
+    });
+    ref.afterClosed().subscribe(result => {
+      if (result === 'requested') {
+        this.snack.open('Cancellation request sent to the owner', '', { duration: 3000 });
+        this.dialogRef.close('request-sent');
       }
     });
   }
