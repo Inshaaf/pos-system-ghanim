@@ -288,7 +288,7 @@ export class ProductFormComponent implements OnInit {
     showInPos: [this.p?.showInPos ?? true],
     showOnline: [this.p?.showOnline ?? true],
     imageUrl: [this.p?.imageUrl || '', Validators.required],
-    initialStock: [null, Validators.required]
+    initialStock: [null, this.p ? [] : Validators.required]
   });
 
   ngOnInit() {
