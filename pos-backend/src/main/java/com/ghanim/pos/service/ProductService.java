@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -120,8 +121,9 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + id));
 
         String updatedShopCode = request.getShopCode() != null ? request.getShopCode().toUpperCase() : null;
-        BigDecimal updatedCostPrice = request.getCostPrice();
-        if (updatedShopCode != null) {
+        BigDecimal updatedCostPrice = product.getCostPrice();
+        boolean shopCodeChanged = !Objects.equals(updatedShopCode, product.getShopCode());
+        if (shopCodeChanged && updatedShopCode != null && !updatedShopCode.isBlank()) {
             BigDecimal decoded = shopCodeService.decode(updatedShopCode);
             if (decoded != null) updatedCostPrice = decoded;
         }
@@ -141,15 +143,12 @@ public class ProductService {
         product.setShowInPos(request.isShowInPos());
         product.setProductSource(Product.ProductSource.valueOf(request.getProductSource()));
         product.setFulfillmentSource(Product.FulfillmentSource.valueOf(request.getFulfillmentSource()));
-        if (request.getOnlinePrice() != null) product.setOnlinePrice(request.getOnlinePrice());
-        if (request.getImageUrl() != null) product.setImageUrl(request.getImageUrl());
-
-        if (request.getCategoryId() != null) {
-            product.setCategory(categoryRepository.findById(request.getCategoryId()).orElse(null));
-        }
-        if (request.getSupplierId() != null) {
-            product.setSupplier(supplierRepository.findById(request.getSupplierId()).orElse(null));
-        }
+        product.setOnlinePrice(request.getOnlinePrice());
+        product.setImageUrl(request.getImageUrl());
+        product.setCategory(request.getCategoryId() == null ? null :
+                categoryRepository.findById(request.getCategoryId()).orElse(null));
+        product.setSupplier(request.getSupplierId() == null ? null :
+                supplierRepository.findById(request.getSupplierId()).orElse(null));
 
         Product saved = productRepository.save(product);
         BigDecimal shopStock = stockLocationRepository

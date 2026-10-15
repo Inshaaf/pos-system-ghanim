@@ -96,6 +96,15 @@ export interface CashFlowDay {
   net: number;
 }
 
+export interface CashMovementDetail {
+  id: number;
+  amount: number;
+  reason?: string;
+  notes?: string;
+  createdAt: string;
+  sessionId?: number;
+}
+
 export interface CashSummary {
   openingFloat: number;
   totalCashSales: number;

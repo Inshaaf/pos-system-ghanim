@@ -339,6 +339,7 @@ export class SidebarComponent {
     { label: 'Reports',      icon: 'bar_chart',              route: '/reports',            roles: ['OWNER'] },
     { label: 'Expenses',     icon: 'account_balance_wallet', route: '/expenses',           roles: ['OWNER', 'CASHIER'] },
     { label: 'Shop Supplies',icon: 'shopping_bag',           route: '/shop-supplies',      roles: ['OWNER', 'CASHIER'] },
+    { label: 'Collections',  icon: 'payments',               route: '/shop-bills',         roles: ['OWNER', 'CASHIER'] },
     { label: 'Demand Products',icon: 'how_to_vote',           route: '/demand-products',    roles: ['OWNER', 'CASHIER'] },
     // SALESPERSON route
     { label: 'Needs List',   icon: 'checklist',              route: '/needs',              roles: ['OWNER', 'SALESPERSON', 'CASHIER'] },
@@ -352,7 +353,7 @@ export class SidebarComponent {
   private isMobileMain(route: string): boolean {
     if (this.auth.isSalesperson()) return ['/needs', '/products'].includes(route);
     if (this.auth.isStorePerson()) return ['/store-needs'].includes(route);
-    return ['/dashboard', '/pos', '/sales', '/reports', '/expenses', '/needs'].includes(route);
+    return ['/dashboard', '/pos', '/sales', '/reports', '/expenses', '/needs', '/shop-bills'].includes(route);
   }
 
   private isVisible(item: NavItem): boolean {

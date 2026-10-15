@@ -43,4 +43,11 @@ public class SalespersonService {
         sp.setActive(true);
         return salespersonRepository.save(sp);
     }
+
+    public Salesperson setCollectionActive(Long id, boolean activeForCollection) {
+        Salesperson sp = salespersonRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Salesperson not found: " + id));
+        sp.setActiveForCollection(activeForCollection);
+        return salespersonRepository.save(sp);
+    }
 }

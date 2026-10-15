@@ -9,4 +9,5 @@ import java.time.LocalDateTime;
 public interface CashMovementRepository extends JpaRepository<CashMovement, Long> {
     List<CashMovement> findBySessionId(Long sessionId);
     List<CashMovement> findByCreatedAtBetween(LocalDateTime from, LocalDateTime to);
+    List<CashMovement> findByCreatedAtBetweenOrderByCreatedAtAsc(LocalDateTime from, LocalDateTime to);
 }

@@ -50,6 +50,7 @@ export interface Salesperson {
   id: number;
   name: string;
   active: boolean;
+  activeForCollection?: boolean;
 }
 
 export interface TempWorker {

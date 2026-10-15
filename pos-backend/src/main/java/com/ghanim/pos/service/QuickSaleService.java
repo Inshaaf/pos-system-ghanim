@@ -118,6 +118,8 @@ public class QuickSaleService {
             } else {
                 unitPrice = new BigDecimal(itemRaw.get("unitPrice").toString());
             }
+            Product posProduct = productId == null ? null : productRepository.findById(productId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productId));
             BigDecimal subtotal = qty.multiply(unitPrice);
             calculatedTotal = calculatedTotal.add(subtotal);
 
@@ -128,18 +130,14 @@ public class QuickSaleService {
                     .name(name)
                     .quantity(qty)
                     .unitPrice(unitPrice)
+                    .costPriceSnapshot(posProduct != null ? posProduct.getCostPrice() : null)
                     .subtotal(subtotal)
                     .build();
 
             sale.getItems().add(item);
 
-            // Deduct stock for POS products — no profit recorded
-            if (productId != null) {
-                Product product = productRepository.findById(productId).orElse(null);
-                if (product != null) {
-                    stockService.deductShopStock(product, qty);
-                }
-            }
+            // Keep POS product cost with this line for profit reporting; manual lines stay costless.
+            if (posProduct != null) stockService.deductShopStock(posProduct, qty);
         }
 
         if (!itemsRaw.isEmpty()) {

@@ -9,8 +9,9 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReportService } from '../../../core/services/report.service';
+import { AuthService } from '../../../core/services/auth.service';
 import {
-  DailyReport, RangeReport, ProductStat, ManualItemStat, SlowStockItem, CashFlowDay, SalespersonSalesReport
+  DailyReport, RangeReport, ProductStat, ManualItemStat, SlowStockItem, CashFlowDay, SalespersonSalesReport, CashMovementDetail
 } from '../../../core/models/report.model';
 
 function colomboToday(): string {
@@ -55,7 +56,7 @@ function colomboToday(): string {
               <div class="stat-grid">
                 <mat-card class="stat-card"><div class="sl">Total Sales</div><div class="sv">{{ daily.totalSales }}</div></mat-card>
                 <mat-card class="stat-card navy"><div class="sl">Revenue</div><div class="sv">Rs {{ daily.totalAmount | number:'1.0-0' }}</div></mat-card>
-                <mat-card class="stat-card green"><div class="sl">Gross Profit</div><div class="sv">Rs {{ daily.totalProfit | number:'1.0-0' }}</div><div class="ss">Margin {{ daily.margin }}%</div></mat-card>
+                <mat-card class="stat-card green"><div class="sl">Gross Profit</div><div class="sv">Rs {{ daily.totalProfit | number:'1.0-0' }}</div><div class="ss">Margin on costed items {{ daily.margin }}%</div></mat-card>
                 <mat-card class="stat-card gold"><div class="sl">Retail</div><div class="sv sm">Rs {{ daily.retailAmount | number:'1.0-0' }}</div><div class="ss">Wholesale Rs {{ daily.wholesaleAmount | number:'1.0-0' }}</div></mat-card>
               </div>
               <div class="stat-grid" style="margin-top:0">
@@ -72,7 +73,7 @@ function colomboToday(): string {
                   <mat-icon class="qs-icon">bolt</mat-icon>
                   <div class="qs-text">
                     <span class="qs-label">Quick Sales</span>
-                    <span class="qs-note">Revenue collected but not counted in profit (no cost price)</span>
+                    <span class="qs-note">POS product lines with a known cost count toward profit; manual items and products without cost are excluded.</span>
                   </div>
                   <div class="qs-stats">
                     <span class="qs-count">{{ daily.quickSaleCount }} sale(s)</span>
@@ -140,7 +141,7 @@ function colomboToday(): string {
               <div class="stat-grid">
                 <mat-card class="stat-card"><div class="sl">Total Sales</div><div class="sv">{{ range.totalSales }}</div></mat-card>
                 <mat-card class="stat-card navy"><div class="sl">Revenue</div><div class="sv">Rs {{ range.totalAmount | number:'1.0-0' }}</div></mat-card>
-                <mat-card class="stat-card green"><div class="sl">Gross Profit</div><div class="sv">Rs {{ range.totalProfit | number:'1.0-0' }}</div><div class="ss">Margin {{ range.margin }}%</div></mat-card>
+                <mat-card class="stat-card green"><div class="sl">Gross Profit</div><div class="sv">Rs {{ range.totalProfit | number:'1.0-0' }}</div><div class="ss">Margin on costed items {{ range.margin }}%</div></mat-card>
                 <mat-card class="stat-card gold"><div class="sl">Retail</div><div class="sv sm">Rs {{ range.retailAmount | number:'1.0-0' }}</div><div class="ss">Wholesale Rs {{ range.wholesaleAmount | number:'1.0-0' }}</div></mat-card>
               </div>
               <div class="stat-grid" style="margin-top:0">
@@ -400,6 +401,39 @@ function colomboToday(): string {
                 </mat-card>
               </div>
 
+              @if (auth.isOwner()) {
+                <div class="movement-actions">
+                  <button mat-stroked-button (click)="toggleCashMovementDetails('CASH_IN')">
+                    <mat-icon>call_received</mat-icon> Cash In Details
+                  </button>
+                  <button mat-stroked-button (click)="toggleCashMovementDetails('CASH_OUT')">
+                    <mat-icon>call_made</mat-icon> Cash Out Details
+                  </button>
+                </div>
+                @if (movementDetailsType) {
+                  <mat-card class="table-card movement-details">
+                    <div class="card-title">{{ movementDetailsType === 'CASH_IN' ? 'Cash In' : 'Cash Out' }} details · {{ cfFrom }} to {{ cfTo }}</div>
+                    @if (movementDetailsLoading) { <div class="spin-center"><mat-spinner diameter="30"/></div> }
+                    @else if (movementDetails.length) {
+                      <div class="cash-flow-table-wrap"><table class="movement-table">
+                        <thead><tr><th>Date &amp; time</th><th>Reason</th><th>Notes</th><th>Session</th><th class="amount-cell">Amount</th></tr></thead>
+                        <tbody>@for (movement of movementDetails; track movement.id) {
+                          <tr>
+                            <td>{{ movement.createdAt | date:'dd MMM yyyy, hh:mm a' }}</td>
+                            <td>{{ reasonLabel(movement.reason || '—') }}</td>
+                            <td>{{ movement.notes || '—' }}</td>
+                            <td>{{ movement.sessionId ? '#' + movement.sessionId : '—' }}</td>
+                            <td class="amount-cell">Rs {{ movement.amount | number:'1.2-2' }}</td>
+                          </tr>
+                        }</tbody>
+                      </table></div>
+                    } @else {
+                      <div class="empty-hint">No {{ movementDetailsType === 'CASH_IN' ? 'cash in' : 'cash out' }} entries in this date range.</div>
+                    }
+                  </mat-card>
+                }
+              }
+
               <mat-card class="table-card">
                 <div class="card-title">Daily Cash Flow</div>
                 <div class="cash-flow-table-wrap"><table mat-table [dataSource]="cashFlow" class="rep-table">
@@ -438,6 +472,12 @@ function colomboToday(): string {
 
     .reports-tabs { }
     .tab-body { padding: 16px 0; display: flex; flex-direction: column; gap: 16px; }
+    .movement-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .movement-details { overflow: hidden; }
+    .movement-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .movement-table th, .movement-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #edf0f4; }
+    .movement-table th { color: #64748b; font-weight: 600; white-space: nowrap; }
+    .movement-table .amount-cell { text-align: right; font-weight: 700; white-space: nowrap; }
     .tab-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .ctrl-label { font-size: 12px; color: #6b7280; font-weight: 500; }
     .date-inp {
@@ -534,6 +574,7 @@ function colomboToday(): string {
   `]
 })
 export class DailyReportComponent implements OnInit {
+  auth = inject(AuthService);
   private reportService = inject(ReportService);
 
   // Daily
@@ -578,6 +619,9 @@ export class DailyReportComponent implements OnInit {
   cfTo = colomboToday();
   cashFlow: CashFlowDay[] = [];
   cfLoading = false;
+  movementDetailsType: 'CASH_IN' | 'CASH_OUT' | null = null;
+  movementDetails: CashMovementDetail[] = [];
+  movementDetailsLoading = false;
 
   spCols = ['name', 'salesCount', 'totalAmount'];
   rangeCols = ['date', 'salesCount', 'revenue'];
@@ -680,10 +724,30 @@ export class DailyReportComponent implements OnInit {
   }
 
   loadCashFlow() {
+    this.movementDetailsType = null;
+    this.movementDetails = [];
     this.cfLoading = true;
     this.reportService.getCashFlow(this.cfFrom, this.cfTo).subscribe({
       next: r => { this.cashFlow = r; this.cfLoading = false; },
       error: () => { this.cfLoading = false; }
+    });
+  }
+
+  toggleCashMovementDetails(type: 'CASH_IN' | 'CASH_OUT') {
+    if (this.movementDetailsType === type) {
+      this.movementDetailsType = null;
+      this.movementDetails = [];
+      return;
+    }
+    this.movementDetailsType = type;
+    this.movementDetailsLoading = true;
+    this.movementDetails = [];
+    this.reportService.getCashMovementDetails(this.cfFrom, this.cfTo, type).subscribe({
+      next: rows => {
+        if (this.movementDetailsType === type) this.movementDetails = rows;
+        this.movementDetailsLoading = false;
+      },
+      error: () => { this.movementDetails = []; this.movementDetailsLoading = false; }
     });
   }
 }

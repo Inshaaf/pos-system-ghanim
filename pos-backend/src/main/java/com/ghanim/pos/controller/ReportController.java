@@ -66,4 +66,12 @@ public class ReportController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         return ResponseEntity.ok(ApiResponse.ok(reportService.getCashFlowReport(from, to)));
     }
+
+    @GetMapping("/cash-movements")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> cashMovements(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam String type) {
+        return ResponseEntity.ok(ApiResponse.ok(reportService.getCashMovementDetails(from, to, type)));
+    }
 }

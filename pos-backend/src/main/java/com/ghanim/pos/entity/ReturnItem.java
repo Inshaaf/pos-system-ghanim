@@ -34,6 +34,9 @@ public class ReturnItem {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal unitPrice;
 
+    @Column(name = "cost_price_snapshot", precision = 10, scale = 2)
+    private BigDecimal costPriceSnapshot;
+
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotal;
 }

@@ -32,6 +32,7 @@ export const routes: Routes = [
       { path: 'reports',             loadComponent: () => import('./features/reports/daily-report/daily-report.component').then(m => m.DailyReportComponent), canActivate: [ownerGuard] },
       { path: 'expenses',            loadComponent: () => import('./features/expenses/expenses.component').then(m => m.ExpensesComponent) },
       { path: 'shop-supplies',       loadComponent: () => import('./features/shop-supplies/shop-supplies.component').then(m => m.ShopSuppliesComponent) },
+      { path: 'shop-bills',          loadComponent: () => import('./features/shop-bills/shop-bills.component').then(m => m.ShopBillsComponent), canActivate: [cashierOrOwnerGuard] },
       { path: 'demand-products',     loadComponent: () => import('./features/demand-products/demand-products.component').then(m => m.DemandProductsComponent), canActivate: [cashierOrOwnerGuard] },
       { path: 'needs',               loadComponent: () => import('./features/needs/needs.component').then(m => m.NeedsComponent), canActivate: [needsGuard] },
       { path: 'store-needs',         loadComponent: () => import('./features/store-needs/store-needs.component').then(m => m.StoreNeedsComponent), canActivate: [storePersonGuard] },

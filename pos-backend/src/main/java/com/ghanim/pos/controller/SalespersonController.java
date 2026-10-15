@@ -43,4 +43,11 @@ public class SalespersonController {
     public ResponseEntity<ApiResponse<Salesperson>> activate(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(salespersonService.activate(id), "Salesperson activated"));
     }
+
+    @PatchMapping("/{id}/collection-status")
+    public ResponseEntity<ApiResponse<Salesperson>> setCollectionStatus(
+            @PathVariable Long id, @RequestBody Map<String, Boolean> body) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                salespersonService.setCollectionActive(id, Boolean.TRUE.equals(body.get("activeForCollection")))));
+    }
 }
