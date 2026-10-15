@@ -36,6 +36,9 @@ public class SaleItem {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal unitPrice;
 
+    @Column(name = "cost_price_snapshot", precision = 10, scale = 2)
+    private BigDecimal costPriceSnapshot;
+
     @Column(nullable = false)
     private String priceType = "RETAIL";
 

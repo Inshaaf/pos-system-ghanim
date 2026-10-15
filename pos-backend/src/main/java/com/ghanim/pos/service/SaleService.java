@@ -63,6 +63,7 @@ public class SaleService {
                     .barcode(product.getBarcode())
                     .quantity(item.getQuantity())
                     .unitPrice(item.getUnitPrice())
+                    .costPriceSnapshot(product.getCostPrice())
                     .priceType(item.getPriceType())
                     .itemDiscount(itemDiscount)
                     .itemDiscountPct(item.getItemDiscountPct() != null ? item.getItemDiscountPct() : BigDecimal.ZERO)

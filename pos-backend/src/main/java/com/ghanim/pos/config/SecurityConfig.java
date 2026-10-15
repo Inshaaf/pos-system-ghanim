@@ -61,6 +61,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/upload").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/demand-products/suggestions")
                                 .hasAnyRole("OWNER", "CASHIER")
+                        .requestMatchers("/api/shop-bills/pending", "/api/shop-bills/*/approve", "/api/shop-bills/*/reject")
+                                .hasRole("OWNER")
+                        .requestMatchers(HttpMethod.GET, "/api/shop-bills/payments/pending").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/shop-bills/payments/*/approve", "/api/shop-bills/payments/*/reject")
+                                .hasRole("OWNER")
+                        .requestMatchers("/api/shop-bills/**").hasAnyRole("OWNER", "CASHIER")
                         .requestMatchers(HttpMethod.GET, "/api/demand-products").hasRole("OWNER")
                         .requestMatchers(HttpMethod.POST, "/api/demand-products")
                                 .hasAnyRole("OWNER", "CASHIER")
@@ -95,7 +101,14 @@ public class SecurityConfig {
                                 .hasAnyRole("OWNER", "CASHIER")
                         .requestMatchers(HttpMethod.PATCH, "/api/salespersons/*/activate")
                                 .hasAnyRole("OWNER", "CASHIER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/salespersons/*/collection-status")
+                                .hasAnyRole("OWNER", "CASHIER")
                         .requestMatchers(HttpMethod.POST, "/api/products").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/product-edit-requests/*")
+                                .hasAnyRole("OWNER", "CASHIER")
+                        .requestMatchers(HttpMethod.GET, "/api/product-edit-requests").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/product-edit-requests/*/approve",
+                                "/api/product-edit-requests/*/reject").hasRole("OWNER")
                         .requestMatchers(HttpMethod.PUT,
                                 "/api/products/**",
                                 "/api/categories/**",

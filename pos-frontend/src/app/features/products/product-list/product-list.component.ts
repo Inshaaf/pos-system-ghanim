@@ -13,7 +13,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { ProductService, CategoryService } from '../../../core/services/product.service';
+import { ProductService, CategoryService, SupplierService } from '../../../core/services/product.service';
 import { Product, Category } from '../../../core/models/product.model';
 import { ProductFormComponent } from '../product-form/product-form.component';
 import { StockAdjustComponent } from '../stock-adjust/stock-adjust.component';
@@ -21,6 +21,7 @@ import { LabelPrintDialogComponent } from '../../pos/components/label-print-dial
 import { AuthService } from '../../../core/services/auth.service';
 import { StockRequestService, StockRequest } from '../../../core/services/stock.service';
 import { QuickSaleService, ManualQuickProduct } from '../../../core/services/sale.service';
+import { ProductEditRequestService, ProductEditRequest } from '../../../core/services/product-edit-request.service';
 
 @Component({
   selector: 'app-product-list',
@@ -107,6 +108,36 @@ import { QuickSaleService, ManualQuickProduct } from '../../../core/services/sal
                   <mat-icon>check</mat-icon> Approve
                 </button>
                 <button mat-stroked-button class="reject-btn" (click)="rejectRequest(r)">
+                  <mat-icon>close</mat-icon> Reject
+                </button>
+              </div>
+            </div>
+          }
+        </mat-card>
+      }
+
+      @if (isOwner && selectedProductsTab === 'stock' && pendingProductEdits.length > 0) {
+        <mat-card class="requests-card product-edits-card">
+          <div class="req-header">
+            <div class="req-title"><mat-icon>edit_note</mat-icon> Pending Product Edit Requests ({{ pendingProductEdits.length }})</div>
+          </div>
+          @for (r of pendingProductEdits; track r.id) {
+            <div class="product-edit-request">
+              <div class="req-product">{{ r.productName }} <span class="request-product-id">#{{ r.productId }}</span></div>
+              <div class="req-detail">Requested by <strong>{{ r.requestedBy }}</strong> · {{ r.requestedAt | date:'dd MMM yyyy, hh:mm a' }}</div>
+              <div class="product-edit-diff">
+                @for (change of productEditChanges(r); track change.key) {
+                  <div class="product-edit-diff-row">
+                    <strong>{{ change.label }}</strong><span>{{ change.current }}</span><mat-icon>arrow_forward</mat-icon><span class="proposed-value">{{ change.proposed }}</span>
+                  </div>
+                }
+                @if (productEditChanges(r).length === 0) { <span class="no-product-changes">No differences found in editable fields.</span> }
+              </div>
+              <div class="req-actions">
+                <button mat-flat-button class="approve-btn" (click)="reviewProductEdit(r, true)" [disabled]="reviewingProductEditId === r.id">
+                  <mat-icon>check</mat-icon> Approve &amp; Apply
+                </button>
+                <button mat-stroked-button class="reject-btn" (click)="reviewProductEdit(r, false)" [disabled]="reviewingProductEditId === r.id">
                   <mat-icon>close</mat-icon> Reject
                 </button>
               </div>
@@ -251,9 +282,9 @@ import { QuickSaleService, ManualQuickProduct } from '../../../core/services/sal
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef></th>
             <td mat-cell *matCellDef="let p">
-              @if (isOwner && p.active) {
-                <button mat-icon-button (click)="openForm(p)" matTooltip="Edit">
-                  <mat-icon>edit</mat-icon>
+              @if ((isOwner || isCashier) && p.active) {
+                <button mat-icon-button (click)="openForm(p)" [matTooltip]="isOwner ? 'Edit' : 'Request product changes'">
+                  <mat-icon>{{ isOwner ? 'edit' : 'edit_note' }}</mat-icon>
                 </button>
               }
               @if (p.active) {
@@ -433,6 +464,17 @@ import { QuickSaleService, ManualQuickProduct } from '../../../core/services/sal
     .req-actions { display: flex; gap: 8px; flex-shrink: 0; }
     .approve-btn { background: #2e7d32 !important; color: #fff !important; font-size: 12px !important; height: 32px !important; }
     .reject-btn { color: #c62828 !important; border-color: #c62828 !important; font-size: 12px !important; height: 32px !important; }
+    .product-edit-request { padding: 14px 16px; border-bottom: 1px solid #f4f6f9; }
+    .product-edit-request:last-child { border-bottom: none; }
+    .request-product-id { color: #8290a0; font-size: 11px; font-weight: 500; }
+    .product-edit-diff { display: grid; gap: 5px; margin: 10px 0; }
+    .product-edit-diff-row { display: grid; grid-template-columns: minmax(130px, .65fr) minmax(100px, 1fr) 20px minmax(100px, 1fr); align-items: center; gap: 8px; font-size: 12px; }
+    .product-edit-diff-row > strong { color: #56677c; }
+    .product-edit-diff-row > span { overflow-wrap: anywhere; color: #6b7280; }
+    .product-edit-diff-row mat-icon { color: #91a0b2; font-size: 17px; width: 17px; height: 17px; }
+    .product-edit-diff-row .proposed-value { color: #1b3050; font-weight: 600; }
+    .no-product-changes { color: #6b7280; font-size: 12px; }
+    .product-edits-card .req-actions { justify-content: flex-end; }
 
     @media (max-width: 767px) {
       .page-container { padding: 12px; }
@@ -458,6 +500,7 @@ import { QuickSaleService, ManualQuickProduct } from '../../../core/services/sal
       .quick-product-form mat-form-field { min-width:0; width:100%; }
       .quick-product-form button { align-self:flex-end; margin:0 0 12px; }
       .quick-product-list { padding:4px 12px; }
+      .product-edit-diff-row { grid-template-columns: minmax(86px, .7fr) minmax(75px, 1fr) 16px minmax(75px, 1fr); gap: 4px; font-size: 11px; }
       .quick-product-row { gap:6px; }
       .quick-product-row strong { font-size:11px; }
 
@@ -472,20 +515,26 @@ import { QuickSaleService, ManualQuickProduct } from '../../../core/services/sal
 export class ProductListComponent implements OnInit {
   private productService = inject(ProductService);
   private categoryService = inject(CategoryService);
+  private supplierService = inject(SupplierService);
   private dialog = inject(MatDialog);
   private snack = inject(MatSnackBar);
   private authService = inject(AuthService);
   private stockRequestService = inject(StockRequestService);
   private quickSaleService = inject(QuickSaleService);
+  private productEditRequestService = inject(ProductEditRequestService);
 
   isOwner = this.authService.isOwner();
+  isCashier = this.authService.isCashier();
   allProducts: Product[] = [];
   products: Product[] = [];
   loadingProducts = false;
   productsLoadError = false;
   skeletonRows = [1, 2, 3, 4, 5];
   categories: Category[] = [];
+  suppliers: Array<{id: number; name: string}> = [];
   pendingRequests: StockRequest[] = [];
+  pendingProductEdits: ProductEditRequest[] = [];
+  reviewingProductEditId: number | null = null;
   manualProducts: ManualQuickProduct[] = [];
   manualProductsLoading = false;
   manualProductsError = false;
@@ -512,14 +561,72 @@ export class ProductListComponent implements OnInit {
   ngOnInit() {
     this.loadProducts();
     this.categoryService.getAll().subscribe(c => this.categories = c);
+    if (this.isOwner) this.supplierService.getAll().subscribe(s => this.suppliers = s ?? []);
     if (this.isOwner) {
       this.loadPendingRequests();
+      this.loadPendingProductEdits();
       this.loadManualProducts();
     }
   }
 
   loadPendingRequests() {
     this.stockRequestService.getPending().subscribe(r => this.pendingRequests = r);
+  }
+
+  loadPendingProductEdits() {
+    this.productEditRequestService.getPending().subscribe({
+      next: requests => this.pendingProductEdits = requests ?? [],
+      error: () => this.pendingProductEdits = []
+    });
+  }
+
+  productEditChanges(request: ProductEditRequest): Array<{key: string; label: string; current: string; proposed: string}> {
+    let current: Record<string, unknown>;
+    let proposed: Record<string, unknown>;
+    try {
+      current = JSON.parse(request.currentData);
+      proposed = JSON.parse(request.proposedData);
+    } catch { return []; }
+    const fields: Array<[string, string]> = [
+      ['name', 'Name'], ['description', 'Description'], ['categoryId', 'Category'], ['supplierId', 'Supplier'],
+      ['retailPrice', 'Retail price'], ['wholesalePrice', 'Wholesale price'], ['onlinePrice', 'Online price'],
+      ['costPrice', 'Cost price'], ['shopCode', 'Shop code'], ['labelName', 'Label name'], ['barcode', 'Barcode'],
+      ['unit', 'Unit'], ['minWholesaleQty', 'Minimum wholesale quantity'], ['minStockAlert', 'Minimum stock alert'],
+      ['productSource', 'Product source'], ['fulfillmentSource', 'Fulfillment source'], ['showInPos', 'Show in POS'],
+      ['showOnline', 'Show online'], ['imageUrl', 'Image URL']
+    ];
+    return fields.flatMap(([key, label]) => {
+      const before = this.productEditValue(current[key], key);
+      const after = this.productEditValue(proposed[key], key);
+      return before === after ? [] : [{ key, label, current: before, proposed: after }];
+    });
+  }
+
+  private productEditValue(value: unknown, key: string): string {
+    if (value === null || value === undefined || value === '') return '—';
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    if (key === 'categoryId') return this.categories.find(category => category.id === Number(value))?.name || String(value);
+    if (key === 'supplierId') return this.suppliers.find(supplier => supplier.id === Number(value))?.name || String(value);
+    return String(value);
+  }
+
+  reviewProductEdit(request: ProductEditRequest, approve: boolean) {
+    this.reviewingProductEditId = request.id;
+    const review = approve
+      ? this.productEditRequestService.approve(request.id)
+      : this.productEditRequestService.reject(request.id);
+    review.subscribe({
+      next: () => {
+        this.reviewingProductEditId = null;
+        this.snack.open(approve ? `Changes applied to ${request.productName}` : `Edit request for ${request.productName} rejected`, '', { duration: 2500 });
+        this.loadPendingProductEdits();
+        if (approve) this.loadProducts();
+      },
+      error: err => {
+        this.reviewingProductEditId = null;
+        this.snack.open(err.error?.message || 'Could not review product edit request', 'OK', { duration: 3500 });
+      }
+    });
   }
 
   approveRequest(r: StockRequest) {
@@ -639,7 +746,7 @@ export class ProductListComponent implements OnInit {
   openForm(product?: Product) {
     const ref = this.dialog.open(ProductFormComponent, {
       width: '560px',
-      data: { product, categories: this.categories }
+      data: { product, categories: this.categories, requestMode: !!product && !this.isOwner }
     });
     ref.afterClosed().subscribe(saved => { if (saved) this.loadProducts(); });
   }

@@ -63,11 +63,22 @@ public class ExpenseService {
             supplierRepository.save(supplier);
         }
 
-        Long sessionId = req.getSessionId() != null
-                ? sessionRepository.findById(req.getSessionId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Session not found")).getId()
-                : sessionRepository.findFirstByStatusOrderByOpenedAtDesc("OPEN")
-                    .map(Session::getId).orElse(null);
+        Long sessionId;
+        if (cashMovementId == null) {
+            Session openSession = sessionRepository.findFirstByStatusOrderByOpenedAtDesc("OPEN")
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Open a till session before recording an expense so it can be deducted from the till"));
+            if (req.getSessionId() != null && !req.getSessionId().equals(openSession.getId())) {
+                throw new IllegalArgumentException("Expenses must be recorded against the currently open till session");
+            }
+            sessionId = openSession.getId();
+        } else {
+            sessionId = req.getSessionId() != null
+                    ? sessionRepository.findById(req.getSessionId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Session not found")).getId()
+                    : null;
+            if (sessionId == null) throw new IllegalArgumentException("Cash out must be linked to a till session");
+        }
 
         Expense expense = Expense.builder()
                 .category(req.getCategory())

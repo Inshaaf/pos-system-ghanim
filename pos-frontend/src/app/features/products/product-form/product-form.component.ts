@@ -1,5 +1,6 @@
 ﻿import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Observable } from 'rxjs';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -13,6 +14,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatIconModule } from '@angular/material/icon';
 import { ProductService, SupplierService, AppSettingService } from '../../../core/services/product.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { ProductEditRequestService } from '../../../core/services/product-edit-request.service';
 
 @Component({
   selector: 'app-product-form',
@@ -24,13 +26,16 @@ import { AuthService } from '../../../core/services/auth.service';
     MatTooltipModule, MatIconModule
   ],
   template: `
-    <h2 mat-dialog-title>{{ data.product ? 'Edit Product' : 'Add Product' }}</h2>
+    <h2 mat-dialog-title>{{ data.requestMode ? 'Request Product Changes' : (data.product ? 'Edit Product' : 'Add Product') }}</h2>
     <mat-dialog-content>
+      @if (data.requestMode) {
+        <p class="request-hint">Your proposed changes will be sent to the owner for approval. The product stays unchanged until approved.</p>
+      }
       <form [formGroup]="form" class="product-form">
         <div class="form-row">
-          <mat-form-field appearance="outline" floatLabel="always" class="full-width">
+          <mat-form-field appearance="outline" class="full-width">
             <mat-label>Name *</mat-label>
-            <input matInput formControlName="name" placeholder="Enter product name" />
+            <input matInput formControlName="name" />
           </mat-form-field>
         </div>
         <div class="form-row">
@@ -126,7 +131,7 @@ import { AuthService } from '../../../core/services/auth.service';
         </div>
         @if (!data.product) {
           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Initial Stock</mat-label>
+            <mat-label>Initial Stock *</mat-label>
             <input matInput type="number" formControlName="initialStock" placeholder="0" />
           </mat-form-field>
         }
@@ -190,14 +195,15 @@ import { AuthService } from '../../../core/services/auth.service';
     <mat-dialog-actions align="end">
       <button mat-button (click)="dialogRef.close()">CANCEL</button>
       <button mat-flat-button class="save-btn" (click)="save()" [disabled]="!canSave()">
-        @if (loading) { <mat-spinner diameter="18" /> } @else { SAVE }
+        @if (loading) { <mat-spinner diameter="18" /> } @else { {{ data.requestMode ? 'SEND REQUEST' : 'SAVE' }} }
       </button>
     </mat-dialog-actions>
   `,
   styles: [`
     h2 { padding: 16px 24px 0; }
-    mat-dialog-content { padding: 8px 24px; max-height: 70vh; }
+    mat-dialog-content { padding: 28px 24px 8px; max-height: 70vh; }
     .product-form { display: flex; flex-direction: column; gap: 0; }
+    .request-hint { margin: 0 24px 12px; padding: 10px 12px; border-radius: 8px; background: #eef5ff; color: #345477; font-size: 13px; }
     .form-row { margin-bottom: 4px; }
     .two-col { display: flex; gap: 12px; }
     .two-col mat-form-field { flex: 1; }
@@ -245,6 +251,7 @@ export class ProductFormComponent implements OnInit {
   private productService = inject(ProductService);
   private supplierService = inject(SupplierService);
   private snack = inject(MatSnackBar);
+  private productEditRequestService = inject(ProductEditRequestService);
 
   auth = inject(AuthService);
   private appSettingService = inject(AppSettingService);
@@ -263,6 +270,7 @@ export class ProductFormComponent implements OnInit {
 
   form = this.fb.group({
     name: [this.p?.name || '', Validators.required],
+    description: [this.p?.description || ''],
     retailPrice: [this.p?.retailPrice || '', Validators.required],
     wholesalePrice: [this.p?.wholesalePrice || '', Validators.required],
     costPrice: [this.p?.costPrice || ''],
@@ -274,13 +282,13 @@ export class ProductFormComponent implements OnInit {
     categoryId: [this.p?.categoryId || null],
     supplierId: [this.p?.supplierId || null],
     productSource: [this.p?.productSource || 'SHOP_DIRECT'],
-    fulfillmentSource: ['SHOP'],
+    fulfillmentSource: [this.p?.fulfillmentSource || 'SHOP'],
     minStockAlert: [this.p?.minStockAlert ?? 5],
     minWholesaleQty: [this.p?.minWholesaleQty || 1],
     showInPos: [this.p?.showInPos ?? true],
     showOnline: [this.p?.showOnline ?? true],
     imageUrl: [this.p?.imageUrl || '', Validators.required],
-    initialStock: [null]
+    initialStock: [null, Validators.required]
   });
 
   ngOnInit() {
@@ -468,13 +476,18 @@ export class ProductFormComponent implements OnInit {
     if (!this.canSave()) return;
     this.loading = true;
     const val = this.form.value;
-    const obs = this.p
-      ? this.productService.update(this.p.id, val as any)
-      : this.productService.create(val as any);
+    const obs: Observable<unknown> = this.data.requestMode
+      ? this.productEditRequestService.submit(this.p.id, val as Record<string, unknown>)
+      : this.p
+        ? this.productService.update(this.p.id, val as any)
+        : this.productService.create(val as any);
 
     obs.subscribe({
-      next: () => { this.snack.open('Saved!', '', { duration: 1500 }); this.dialogRef.close(true); },
-      error: err => { this.loading = false; this.snack.open(err.error?.message || 'Error', 'OK', { duration: 3000 }); }
+      next: () => {
+        this.snack.open(this.data.requestMode ? 'Product edit request sent to owner' : 'Saved!', '', { duration: 2500 });
+        this.dialogRef.close(true);
+      },
+      error: (err: any) => { this.loading = false; this.snack.open(err.error?.message || 'Error', 'OK', { duration: 3000 }); }
     });
   }
 }

@@ -13,6 +13,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ExpenseService } from '../../core/services/expense.service';
+import { SessionService } from '../../core/services/session.service';
 import { SalespersonService, SupplierService, TempWorkerService } from '../../core/services/product.service';
 import { Expense, ExpenseCategory, CATEGORY_LABELS, CATEGORY_ICONS } from '../../core/models/expense.model';
 import { Supplier, Salesperson, type TempWorker } from '../../core/models/product.model';
@@ -42,10 +43,14 @@ function colomboToday() {
       <div class="page-header">
         <div>
           <h1 class="page-title">Expenses</h1>
-          <p class="page-sub">Track daily shop expenses. Entries made during an open session reduce its expected cash.</p>
+          <p class="page-sub">Expenses recorded here are deducted from the active till session.</p>
         </div>
         <input type="date" class="date-picker" [(ngModel)]="selectedDate" (ngModelChange)="onDateChange()" />
       </div>
+
+      @if (sessionCheckComplete && !activeTillOpen) {
+        <div class="till-warning"><mat-icon>info</mat-icon> Open a till session before recording an expense. Each new expense will reduce that till’s expected cash.</div>
+      }
 
       <mat-tab-group class="tab-group" animationDuration="150ms">
 
@@ -332,6 +337,8 @@ function colomboToday() {
     .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
     .page-title { font-size: 22px; font-weight: 700; color: #1b3050; margin: 0; }
     .page-sub { color: #888; font-size: 13px; margin: 2px 0 0; }
+    .till-warning { display:flex; align-items:center; gap:8px; margin:-8px 0 14px; padding:10px 12px; border:1px solid #f2d59b; border-radius:8px; background:#fff9e9; color:#755513; font-size:13px; }
+    .till-warning mat-icon { flex:0 0 auto; width:18px; height:18px; font-size:18px; }
 
     .date-picker {
       border: 1px solid #e2e6ec; border-radius: 6px; padding: 7px 10px;
@@ -493,6 +500,7 @@ function colomboToday() {
 })
 export class ExpensesComponent implements OnInit {
   private expenseService = inject(ExpenseService);
+  private sessionService = inject(SessionService);
   private supplierService = inject(SupplierService);
   private spService = inject(SalespersonService);
   private twService = inject(TempWorkerService);
@@ -502,6 +510,8 @@ export class ExpensesComponent implements OnInit {
 
   selectedDate = colomboToday();
   selectedMonth = colomboToday().substring(0, 7);
+  activeTillOpen = false;
+  sessionCheckComplete = false;
 
   expenses: Expense[] = [];
   suppliers: Supplier[] = [];
@@ -527,6 +537,10 @@ export class ExpensesComponent implements OnInit {
   objectKeys = Object.keys;
 
   ngOnInit() {
+    this.sessionService.loadCurrent().subscribe({
+      next: session => { this.activeTillOpen = !!session; this.sessionCheckComplete = true; },
+      error: () => { this.activeTillOpen = false; this.sessionCheckComplete = true; }
+    });
     this.supplierService.getAll().subscribe(s => this.suppliers = s);
     this.spService.getAll().subscribe(s => this.salespersons = s.filter(sp => sp.active));
     this.twService.getAll().subscribe(w => this.tempWorkers = w);
@@ -558,7 +572,10 @@ export class ExpensesComponent implements OnInit {
 
   quickAdd(category: ExpenseCategory, amount: number, note: string) {
     this.expenseService.create({ category, amount, note, expenseDate: this.selectedDate })
-      .subscribe(() => { this.snack.open(`${note} added`, '', { duration: 1500 }); this.load(); });
+      .subscribe({
+        next: () => { this.snack.open(`${note} added`, '', { duration: 1500 }); this.load(); },
+        error: err => this.showExpenseError(err)
+      });
   }
 
   addSupplierPayment() {
@@ -567,12 +584,15 @@ export class ExpensesComponent implements OnInit {
       category: 'SUPPLIER_PAYMENT', amount: this.sp.amount,
       note: this.sp.note || undefined, supplierId: this.sp.supplierId,
       expenseDate: this.selectedDate
-    }).subscribe(() => {
-      this.snack.open('Supplier payment recorded', '', { duration: 1500 });
-      this.sp = { supplierId: undefined, amount: undefined, note: '' };
-      this.selectedSupplier = undefined;
-      this.supplierService.getAll().subscribe(s => this.suppliers = s);
-      this.load();
+    }).subscribe({
+      next: () => {
+        this.snack.open('Supplier payment recorded', '', { duration: 1500 });
+        this.sp = { supplierId: undefined, amount: undefined, note: '' };
+        this.selectedSupplier = undefined;
+        this.supplierService.getAll().subscribe(s => this.suppliers = s);
+        this.load();
+      },
+      error: err => this.showExpenseError(err)
     });
   }
 
@@ -594,7 +614,7 @@ export class ExpensesComponent implements OnInit {
       this.snack.open('Bus fare added', '', { duration: 1500 });
       this.bf = { salespersonId: undefined, amount: 300, note: 'Bus fare - deduct from salary' };
       this.load();
-    });
+    }, err => this.showExpenseError(err));
   }
 
   addDaySalaryWorker() {
@@ -608,7 +628,7 @@ export class ExpensesComponent implements OnInit {
       this.snack.open('Day salary recorded', '', { duration: 1500 });
       this.tw = { workerId: undefined, note: '', amount: 1500 };
       this.load();
-    });
+    }, err => this.showExpenseError(err));
   }
 
   addSalary() {
@@ -621,7 +641,7 @@ export class ExpensesComponent implements OnInit {
       this.snack.open('Salary recorded', '', { duration: 1500 });
       this.sal = { salespersonId: undefined, amount: undefined, note: '' };
       this.load();
-    });
+    }, err => this.showExpenseError(err));
   }
 
   addOther() {
@@ -633,7 +653,11 @@ export class ExpensesComponent implements OnInit {
       this.snack.open('Expense added', '', { duration: 1500 });
       this.other = { note: '', amount: undefined };
       this.load();
-    });
+    }, err => this.showExpenseError(err));
+  }
+
+  private showExpenseError(err: any) {
+    this.snack.open(err?.error?.message || 'Could not record expense. Confirm that a till session is open.', 'OK', { duration: 4000 });
   }
 
   deleteExpense(e: Expense) {

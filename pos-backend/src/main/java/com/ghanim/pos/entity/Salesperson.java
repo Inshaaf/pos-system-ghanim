@@ -21,6 +21,10 @@ public class Salesperson {
     @Builder.Default
     private boolean active = true;
 
+    @Builder.Default
+    @Column(name = "active_for_collection", nullable = false)
+    private boolean activeForCollection = false;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 }

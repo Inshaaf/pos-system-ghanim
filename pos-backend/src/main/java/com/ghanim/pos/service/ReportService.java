@@ -39,6 +39,7 @@ public class ReportService {
 
         BigDecimal totalAmount = BigDecimal.ZERO, retailAmount = BigDecimal.ZERO,
                 wholesaleAmount = BigDecimal.ZERO, totalProfit = BigDecimal.ZERO,
+                costedProductRevenue = BigDecimal.ZERO,
                 cashSales = BigDecimal.ZERO, cardSales = BigDecimal.ZERO, creditSales = BigDecimal.ZERO;
 
         Map<Long, Map<String, Object>> salespersonMap = new HashMap<>();
@@ -53,13 +54,13 @@ public class ReportService {
                 case "CREDIT" -> creditSales = creditSales.add(sale.getTotal());
             }
             List<SaleItem> items = saleItemRepository.findBySaleId(sale.getId());
-            for (SaleItem item : items) {
-                if (item.getProduct() != null && item.getProduct().getCostPrice() != null) {
-                    totalProfit = totalProfit.add(
-                        item.getUnitPrice().subtract(item.getProduct().getCostPrice())
-                            .multiply(item.getQuantity()).subtract(item.getItemDiscount()));
-                }
-            }
+            totalProfit = totalProfit.add(regularSaleProfit(sale, items));
+            costedProductRevenue = costedProductRevenue.add(regularSaleCostedRevenue(sale, items));
+        }
+
+        for (QuickSale quickSale : quickSaleRepository.findByCreatedAtBetweenAndStatusNotOrderByCreatedAtDesc(from, to, "CANCELLED")) {
+            totalProfit = totalProfit.add(quickSaleProfit(quickSale));
+            costedProductRevenue = costedProductRevenue.add(quickSaleCostedRevenue(quickSale));
         }
 
         // Include credit sales in salesperson totals even though they are not yet completed/paid.
@@ -99,17 +100,20 @@ public class ReportService {
         List<Return> dayReturns = returnRepository.findByCreatedAtBetweenOrderByCreatedAtDesc(from, to);
         BigDecimal totalRefunds = BigDecimal.ZERO;
         BigDecimal returnedProfit = BigDecimal.ZERO;
+        BigDecimal returnedCostedRevenue = BigDecimal.ZERO;
         for (Return r : dayReturns) {
             totalRefunds = totalRefunds.add(r.getRefundAmount());
             for (ReturnItem ri : returnItemRepository.findByReturnRecordId(r.getId())) {
-                if (ri.getProduct() != null && ri.getProduct().getCostPrice() != null) {
+                if (hasKnownCost(ri.getCostPriceSnapshot())) {
                     returnedProfit = returnedProfit.add(
-                        ri.getUnitPrice().subtract(ri.getProduct().getCostPrice()).multiply(ri.getQuantity()));
+                        ri.getUnitPrice().subtract(ri.getCostPriceSnapshot()).multiply(ri.getQuantity()));
+                    returnedCostedRevenue = returnedCostedRevenue.add(ri.getUnitPrice().multiply(ri.getQuantity()));
                 }
             }
         }
         totalAmount = totalAmount.subtract(totalRefunds);
-        totalProfit = totalProfit.subtract(returnedProfit);
+        totalProfit = totalProfit.subtract(returnedProfit).setScale(2, RoundingMode.HALF_UP);
+        costedProductRevenue = costedProductRevenue.subtract(returnedCostedRevenue);
 
         BigDecimal openingFloat = sessionRepository.findAllByOrderByOpenedAtDesc().stream()
                 .filter(s -> s.getOpenedAt() != null && s.getOpenedAt().toLocalDate().equals(date))
@@ -127,8 +131,8 @@ public class ReportService {
                 .collect(Collectors.groupingBy(m -> m.getReason() != null ? m.getReason() : "OTHER",
                         Collectors.reducing(BigDecimal.ZERO, CashMovement::getAmount, BigDecimal::add)));
 
-        BigDecimal margin = totalAmount.compareTo(BigDecimal.ZERO) > 0
-                ? totalProfit.divide(totalAmount, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))
+        BigDecimal margin = costedProductRevenue.compareTo(BigDecimal.ZERO) > 0
+                ? totalProfit.divide(costedProductRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))
                 : BigDecimal.ZERO;
 
         Map<String, Object> report = new LinkedHashMap<>();
@@ -181,6 +185,7 @@ public class ReportService {
         List<Sale> sales = saleRepository.findCompletedSalesBetween(dtFrom, dtTo);
 
         BigDecimal totalAmount = BigDecimal.ZERO, totalProfit = BigDecimal.ZERO,
+                costedProductRevenue = BigDecimal.ZERO,
                 cashSales = BigDecimal.ZERO, cardSales = BigDecimal.ZERO, creditSales = BigDecimal.ZERO,
                 retailAmount = BigDecimal.ZERO, wholesaleAmount = BigDecimal.ZERO;
 
@@ -195,36 +200,38 @@ public class ReportService {
             }
         }
 
-        // Profit via items
+        // Profit from sale-line cost snapshots; lines without known cost are excluded.
         for (Sale sale : sales) {
             List<SaleItem> items = saleItemRepository.findBySaleId(sale.getId());
-            for (SaleItem item : items) {
-                if (item.getProduct() != null && item.getProduct().getCostPrice() != null) {
-                    totalProfit = totalProfit.add(
-                        item.getUnitPrice().subtract(item.getProduct().getCostPrice())
-                            .multiply(item.getQuantity()).subtract(item.getItemDiscount()));
-                }
-            }
+            totalProfit = totalProfit.add(regularSaleProfit(sale, items));
+            costedProductRevenue = costedProductRevenue.add(regularSaleCostedRevenue(sale, items));
+        }
+        for (QuickSale quickSale : quickSaleRepository.findByCreatedAtBetweenAndStatusNotOrderByCreatedAtDesc(dtFrom, dtTo, "CANCELLED")) {
+            totalProfit = totalProfit.add(quickSaleProfit(quickSale));
+            costedProductRevenue = costedProductRevenue.add(quickSaleCostedRevenue(quickSale));
         }
 
         // Subtract returns from revenue and profit
         List<Return> rangeReturns = returnRepository.findByCreatedAtBetweenOrderByCreatedAtDesc(dtFrom, dtTo);
         BigDecimal totalRefunds = BigDecimal.ZERO;
         BigDecimal returnedProfit = BigDecimal.ZERO;
+        BigDecimal returnedCostedRevenue = BigDecimal.ZERO;
         for (Return r : rangeReturns) {
             totalRefunds = totalRefunds.add(r.getRefundAmount());
             for (ReturnItem ri : returnItemRepository.findByReturnRecordId(r.getId())) {
-                if (ri.getProduct() != null && ri.getProduct().getCostPrice() != null) {
+                if (hasKnownCost(ri.getCostPriceSnapshot())) {
                     returnedProfit = returnedProfit.add(
-                        ri.getUnitPrice().subtract(ri.getProduct().getCostPrice()).multiply(ri.getQuantity()));
+                        ri.getUnitPrice().subtract(ri.getCostPriceSnapshot()).multiply(ri.getQuantity()));
+                    returnedCostedRevenue = returnedCostedRevenue.add(ri.getUnitPrice().multiply(ri.getQuantity()));
                 }
             }
         }
         totalAmount = totalAmount.subtract(totalRefunds);
-        totalProfit = totalProfit.subtract(returnedProfit);
+        totalProfit = totalProfit.subtract(returnedProfit).setScale(2, RoundingMode.HALF_UP);
+        costedProductRevenue = costedProductRevenue.subtract(returnedCostedRevenue);
 
-        BigDecimal margin = totalAmount.compareTo(BigDecimal.ZERO) > 0
-                ? totalProfit.divide(totalAmount, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))
+        BigDecimal margin = costedProductRevenue.compareTo(BigDecimal.ZERO) > 0
+                ? totalProfit.divide(costedProductRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))
                 : BigDecimal.ZERO;
 
         // Daily breakdown
@@ -334,21 +341,65 @@ public class ReportService {
     // ── Product Report ───────────────────────────────────────────────────────
 
     public List<Map<String, Object>> getProductReport(LocalDate from, LocalDate to) {
-        List<Object[]> rows = saleItemRepository.productSalesSummary(
-                from.atStartOfDay(), to.atTime(23, 59, 59));
-        return rows.stream().map(row -> {
+        LocalDateTime start = from.atStartOfDay();
+        LocalDateTime end = to.atTime(23, 59, 59);
+        Map<Long, Map<String, Object>> byProduct = new LinkedHashMap<>();
+        for (Object[] row : saleItemRepository.productSalesSummary(start, end)) {
+            Long productId = ((Number) row[0]).longValue();
             Map<String, Object> m = new LinkedHashMap<>();
-            m.put("productId", row[0]);
+            m.put("productId", productId);
             m.put("productName", row[1]);
             m.put("category", row[2]);
             m.put("qtySold", row[3]);
             m.put("revenue", row[4]);
-            m.put("profit", row[5]);
-            BigDecimal revenue = row[4] != null ? (BigDecimal) row[4] : BigDecimal.ZERO;
-            BigDecimal profit = row[5] != null ? (BigDecimal) row[5] : BigDecimal.ZERO;
-            BigDecimal margin = revenue.compareTo(BigDecimal.ZERO) > 0
-                    ? profit.divide(revenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))
+            m.put("costedRevenue", row[5] != null ? row[5] : BigDecimal.ZERO);
+            m.put("profit", row[6] != null ? row[6] : BigDecimal.ZERO);
+            byProduct.put(productId, m);
+        }
+        for (Object[] row : quickSaleItemRepository.posProductSalesSummary(start, end)) {
+            Long productId = ((Number) row[0]).longValue();
+            Map<String, Object> m = byProduct.computeIfAbsent(productId, id -> {
+                Map<String, Object> item = new LinkedHashMap<>();
+                item.put("productId", id);
+                item.put("productName", row[1]);
+                item.put("category", row[2]);
+                item.put("qtySold", BigDecimal.ZERO);
+                item.put("revenue", BigDecimal.ZERO);
+                item.put("costedRevenue", BigDecimal.ZERO);
+                item.put("profit", BigDecimal.ZERO);
+                return item;
+            });
+            m.put("qtySold", ((BigDecimal) m.get("qtySold")).add((BigDecimal) row[3]));
+            m.put("revenue", ((BigDecimal) m.get("revenue")).add((BigDecimal) row[4]));
+            m.put("costedRevenue", ((BigDecimal) m.get("costedRevenue")).add((BigDecimal) row[5]));
+            m.put("profit", ((BigDecimal) m.get("profit")).add(row[6] != null ? (BigDecimal) row[6] : BigDecimal.ZERO));
+        }
+        for (Object[] row : returnItemRepository.productReturnsBetween(start, end)) {
+            Long productId = ((Number) row[0]).longValue();
+            Map<String, Object> m = byProduct.computeIfAbsent(productId, id -> {
+                Map<String, Object> item = new LinkedHashMap<>();
+                item.put("productId", id);
+                item.put("productName", row[1]);
+                item.put("category", row[2]);
+                item.put("qtySold", BigDecimal.ZERO);
+                item.put("revenue", BigDecimal.ZERO);
+                item.put("costedRevenue", BigDecimal.ZERO);
+                item.put("profit", BigDecimal.ZERO);
+                return item;
+            });
+            m.put("qtySold", ((BigDecimal) m.get("qtySold")).subtract((BigDecimal) row[3]));
+            m.put("revenue", ((BigDecimal) m.get("revenue")).subtract((BigDecimal) row[4]));
+            m.put("costedRevenue", ((BigDecimal) m.get("costedRevenue")).subtract((BigDecimal) row[5]));
+            m.put("profit", ((BigDecimal) m.get("profit")).subtract(row[6] != null ? (BigDecimal) row[6] : BigDecimal.ZERO));
+        }
+        return byProduct.values().stream().map(m -> {
+            BigDecimal revenue = (BigDecimal) m.get("revenue");
+            BigDecimal costedRevenue = (BigDecimal) m.get("costedRevenue");
+            BigDecimal profit = (BigDecimal) m.get("profit");
+            BigDecimal margin = costedRevenue.compareTo(BigDecimal.ZERO) > 0
+                    ? profit.divide(costedRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))
                     : BigDecimal.ZERO;
+            m.remove("costedRevenue");
             m.put("margin", margin.setScale(1, RoundingMode.HALF_UP));
             return m;
         }).collect(Collectors.toList());
@@ -442,8 +493,90 @@ public class ReportService {
         return result;
     }
 
+    public List<Map<String, Object>> getCashMovementDetails(LocalDate from, LocalDate to, String type) {
+        if (!"CASH_IN".equals(type) && !"CASH_OUT".equals(type)) {
+            throw new IllegalArgumentException("Movement type must be CASH_IN or CASH_OUT");
+        }
+        LocalDateTime start = from.atStartOfDay();
+        LocalDateTime end = to.plusDays(1).atStartOfDay().minusNanos(1);
+        return cashMovementRepository.findByCreatedAtBetweenOrderByCreatedAtAsc(start, end).stream()
+                .filter(movement -> type.equals(movement.getType()))
+                .map(movement -> {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("id", movement.getId());
+                    row.put("amount", movement.getAmount());
+                    row.put("reason", movement.getReason());
+                    row.put("notes", movement.getNotes());
+                    row.put("createdAt", movement.getCreatedAt());
+                    row.put("sessionId", movement.getSession() == null ? null : movement.getSession().getId());
+                    return row;
+                }).collect(Collectors.toList());
+    }
+
     private BigDecimal sumMovements(List<CashMovement> movements, String type) {
         return movements.stream().filter(m -> type.equals(m.getType()))
                 .map(CashMovement::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal regularSaleProfit(Sale sale, List<SaleItem> items) {
+        BigDecimal saleLineRevenue = items.stream()
+                .map(item -> item.getSubtotal() != null ? item.getSubtotal() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal cartDiscount = sale.getCartDiscount() != null ? sale.getCartDiscount() : BigDecimal.ZERO;
+        BigDecimal profit = BigDecimal.ZERO;
+        for (SaleItem item : items) {
+            BigDecimal cost = item.getCostPriceSnapshot();
+            if (!hasKnownCost(cost)) continue;
+            BigDecimal itemDiscount = item.getItemDiscount() != null ? item.getItemDiscount() : BigDecimal.ZERO;
+            BigDecimal lineRevenue = item.getSubtotal() != null ? item.getSubtotal()
+                    : item.getUnitPrice().multiply(item.getQuantity()).subtract(itemDiscount);
+            BigDecimal cartDiscountShare = BigDecimal.ZERO;
+            if (cartDiscount.signum() > 0 && saleLineRevenue.signum() > 0) {
+                cartDiscountShare = cartDiscount.multiply(lineRevenue)
+                        .divide(saleLineRevenue, 10, RoundingMode.HALF_UP);
+            }
+            profit = profit.add(item.getUnitPrice().subtract(cost).multiply(item.getQuantity())
+                    .subtract(itemDiscount).subtract(cartDiscountShare));
+        }
+        return profit;
+    }
+
+    private BigDecimal regularSaleCostedRevenue(Sale sale, List<SaleItem> items) {
+        BigDecimal saleLineRevenue = items.stream()
+                .map(item -> item.getSubtotal() != null ? item.getSubtotal() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal cartDiscount = sale.getCartDiscount() != null ? sale.getCartDiscount() : BigDecimal.ZERO;
+        BigDecimal revenue = BigDecimal.ZERO;
+        for (SaleItem item : items) {
+            if (!hasKnownCost(item.getCostPriceSnapshot())) continue;
+            BigDecimal lineRevenue = item.getSubtotal() != null ? item.getSubtotal()
+                    : item.getUnitPrice().multiply(item.getQuantity());
+            BigDecimal cartDiscountShare = cartDiscount.signum() > 0 && saleLineRevenue.signum() > 0
+                    ? cartDiscount.multiply(lineRevenue).divide(saleLineRevenue, 10, RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
+            revenue = revenue.add(lineRevenue.subtract(cartDiscountShare));
+        }
+        return revenue;
+    }
+
+    private BigDecimal quickSaleProfit(QuickSale sale) {
+        BigDecimal profit = BigDecimal.ZERO;
+        for (QuickSaleItem item : sale.getItems()) {
+            // Manual Quick Sale lines have no POS product ID and never contribute profit.
+            if (item.getProductId() == null || !hasKnownCost(item.getCostPriceSnapshot())) continue;
+            profit = profit.add(item.getUnitPrice().subtract(item.getCostPriceSnapshot()).multiply(item.getQuantity()));
+        }
+        return profit;
+    }
+
+    private BigDecimal quickSaleCostedRevenue(QuickSale sale) {
+        return sale.getItems().stream()
+                .filter(item -> item.getProductId() != null && hasKnownCost(item.getCostPriceSnapshot()))
+                .map(QuickSaleItem::getSubtotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private boolean hasKnownCost(BigDecimal costPrice) {
+        return costPrice != null && costPrice.compareTo(BigDecimal.ZERO) > 0;
     }
 }

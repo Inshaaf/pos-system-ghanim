@@ -127,6 +127,10 @@ export class SalespersonService {
   activate(id: number): Observable<Salesperson> {
     return this.http.patch<any>(`${environment.apiUrl}/salespersons/${id}/activate`, {}).pipe(map(r => r.data));
   }
+
+  setCollectionActive(id: number, activeForCollection: boolean): Observable<Salesperson> {
+    return this.http.patch<any>(`${environment.apiUrl}/salespersons/${id}/collection-status`, { activeForCollection }).pipe(map(r => r.data));
+  }
 }
 
 @Injectable({ providedIn: 'root' })

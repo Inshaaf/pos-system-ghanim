@@ -53,12 +53,21 @@ public class ReturnService {
 
             BigDecimal itemTotal = item.getUnitPrice().multiply(item.getQuantity());
             refundAmount = refundAmount.add(itemTotal);
+            BigDecimal costPriceSnapshot = product.getCostPrice();
+            if (originalSale != null) {
+                SaleItem originalLine = originalSale.getItems().stream()
+                        .filter(saleItem -> saleItem.getProduct() != null
+                                && saleItem.getProduct().getId().equals(product.getId()))
+                        .findFirst().orElse(null);
+                if (originalLine != null) costPriceSnapshot = originalLine.getCostPriceSnapshot();
+            }
 
             returnItems.add(ReturnItem.builder()
                     .product(product)
                     .productName(product.getName())
                     .quantity(item.getQuantity())
                     .unitPrice(item.getUnitPrice())
+                    .costPriceSnapshot(costPriceSnapshot)
                     .subtotal(itemTotal)
                     .build());
 
