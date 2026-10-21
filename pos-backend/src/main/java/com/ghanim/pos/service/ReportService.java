@@ -120,7 +120,7 @@ public class ReportService {
                 .map(s -> s.getOpeningFloat() != null ? s.getOpeningFloat() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         List<CashMovement> movements = cashMovementRepository.findByCreatedAtBetween(from, to);
-        BigDecimal cashIn = movements.stream().filter(m -> "CASH_IN".equals(m.getType()))
+        BigDecimal cashIn = movements.stream().filter(m -> "CASH_IN".equals(m.getType()) || "CREDIT_PAYMENT".equals(m.getType()))
                 .map(CashMovement::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal cashOut = movements.stream().filter(m -> "CASH_OUT".equals(m.getType()))
                 .map(CashMovement::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -463,7 +463,7 @@ public class ReportService {
             BigDecimal quickSaleCash = quickSaleRepository.sumCashBetween(dayStart, dayEnd);
             long quickSaleCount = quickSaleRepository.countByCreatedAtBetweenAndStatusNot(dayStart, dayEnd, "CANCELLED");
             List<CashMovement> movements = cashMovementRepository.findByCreatedAtBetween(dayStart, dayEnd);
-            BigDecimal cashIn = sumMovements(movements, "CASH_IN");
+            BigDecimal cashIn = sumMovements(movements, "CASH_IN").add(sumMovements(movements, "CREDIT_PAYMENT"));
             BigDecimal cashOut = sumMovements(movements, "CASH_OUT");
             BigDecimal cashRefunds = sumMovements(movements, "REFUND");
 

@@ -10,6 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { QuickSaleService, SaleService } from '../../core/services/sale.service';
+import { CashLoan, CashService } from '../../core/services/session.service';
 import { CreditPaymentDialogComponent } from './credit-payment-dialog/credit-payment-dialog.component';
 
 @Component({
@@ -24,19 +25,33 @@ import { CreditPaymentDialogComponent } from './credit-payment-dialog/credit-pay
     <div class="page-container">
       <div class="page-header">
         <div>
-          <h1 class="page-title">Credit Sales</h1>
-          <p class="page-sub">{{ filtered.length }} pending credit(s) · LKR {{ totalOutstanding | number:'1.2-2' }} outstanding</p>
+          <h1 class="page-title">{{ selectedTab === 'sales' ? 'Credit Sales' : 'Loans Given' }}</h1>
+          @if (selectedTab === 'sales') {
+            <p class="page-sub">{{ filtered.length }} pending credit(s) · LKR {{ totalOutstanding | number:'1.2-2' }} outstanding</p>
+          } @else {
+            <p class="page-sub">{{ filteredLoans.length }} loan record(s) · LKR {{ loanOutstanding | number:'1.2-2' }} owed to the shop</p>
+          }
         </div>
       </div>
 
+      <nav class="credit-tabs" aria-label="Credits and loans">
+        <button type="button" [class.selected]="selectedTab === 'sales'" (click)="selectedTab = 'sales'; applyFilter()">
+          <mat-icon>receipt_long</mat-icon> Credit Sales <span>{{ credits.length }}</span>
+        </button>
+        <button type="button" [class.selected]="selectedTab === 'loans'" (click)="selectedTab = 'loans'; applyFilter()">
+          <mat-icon>handshake</mat-icon> Loans Given <span>{{ loans.length }}</span>
+        </button>
+      </nav>
+
       <mat-card class="search-card">
         <mat-form-field appearance="outline" class="search-field">
-          <mat-label>Search by customer or sale #</mat-label>
+          <mat-label>{{ selectedTab === 'sales' ? 'Search by customer or sale #' : 'Search by borrower name or phone' }}</mat-label>
           <mat-icon matPrefix>search</mat-icon>
           <input matInput [(ngModel)]="search" (ngModelChange)="applyFilter()" placeholder="Search..." />
         </mat-form-field>
       </mat-card>
 
+      @if (selectedTab === 'sales') {
       <mat-card>
         @if (loading) {
           <div class="empty-state"><mat-spinner diameter="32" /></div>
@@ -68,6 +83,36 @@ import { CreditPaymentDialogComponent } from './credit-payment-dialog/credit-pay
           }
         }
       </mat-card>
+      } @else {
+        <mat-card>
+          @if (loading) {
+            <div class="empty-state"><mat-spinner diameter="32" /></div>
+          } @else if (filteredLoans.length === 0) {
+            <div class="empty-state">
+              <mat-icon>check_circle_outline</mat-icon>
+              <p>{{ search ? 'No matching loan records.' : 'No loans have been given.' }}</p>
+            </div>
+          } @else {
+            @for (loan of filteredLoans; track loan.id) {
+              <div class="credit-row loan-row">
+                <div class="credit-left">
+                  <div class="loan-icon"><mat-icon>person</mat-icon></div>
+                  <div class="sale-info">
+                    <span class="customer-name">{{ loan.personName }}</span>
+                    <span class="customer-contact">Phone: {{ loan.phoneNumber }}</span>
+                    <span class="sale-date">Added {{ loan.createdAt | date:'dd/MM/yyyy' }}</span>
+                  </div>
+                </div>
+                <div class="loan-amounts">
+                  <span>Given <strong>LKR {{ loan.totalGiven | number:'1.2-2' }}</strong></span>
+                  <span>Repaid <strong>LKR {{ (loan.totalGiven - loan.outstanding) | number:'1.2-2' }}</strong></span>
+                  <span class="loan-balance">Outstanding <strong>LKR {{ loan.outstanding | number:'1.2-2' }}</strong></span>
+                </div>
+              </div>
+            }
+          }
+        </mat-card>
+      }
     </div>
   `,
   styles: [`
@@ -99,11 +144,23 @@ import { CreditPaymentDialogComponent } from './credit-payment-dialog/credit-pay
     .credit-right { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
     .amount { font-weight: 700; font-size: 16px; color: #f57f17; }
     .pay-btn { background: #2e7d32 !important; color: #fff !important; }
+    .credit-tabs { display:flex; gap:8px; margin:0 0 14px; border-bottom:1px solid #e5eaf0; }
+    .credit-tabs button { display:flex; align-items:center; gap:8px; padding:11px 14px; color:#62728a; background:transparent; border:0; border-bottom:2px solid transparent; font:inherit; font-size:13px; cursor:pointer; }
+    .credit-tabs button.selected { color:#1b4c7e; border-bottom-color:#1b4c7e; font-weight:700; }
+    .credit-tabs mat-icon { font-size:18px; width:18px; height:18px; }
+    .credit-tabs span { min-width:20px; padding:2px 6px; border-radius:10px; background:#edf2f7; text-align:center; font-size:11px; }
+    .loan-icon { display:grid; place-items:center; width:38px; height:38px; flex:none; border-radius:50%; color:#1b4c7e; background:#eef5fc; }
+    .loan-amounts { display:flex; gap:22px; align-items:center; color:#64748b; font-size:12px; }
+    .loan-amounts span { display:flex; flex-direction:column; gap:4px; }
+    .loan-amounts strong { color:#1b3050; font-size:13px; }
+    .loan-amounts .loan-balance strong { color:#b45309; }
 
     @media (max-width: 767px) {
       .page-container { padding: 12px; }
       .page-header { flex-direction: column; gap: 8px; }
       .search-field { max-width: 100%; }
+      .credit-tabs { overflow-x:auto; }
+      .credit-tabs button { flex:none; padding:10px 8px; font-size:12px; }
 
       /* Stack the credit row: left info on top, right (amount + button) below */
       .credit-row { flex-wrap: wrap; gap: 10px; padding: 12px; }
@@ -116,6 +173,7 @@ import { CreditPaymentDialogComponent } from './credit-payment-dialog/credit-pay
       }
       .amount { font-size: 16px; }
       .pay-btn { flex: 1; }
+      .loan-amounts { flex:0 0 100%; justify-content:space-between; gap:8px; padding-left:54px; }
     }
   `]
 })
@@ -124,14 +182,22 @@ export class CreditsComponent implements OnInit {
   private quickSaleService = inject(QuickSaleService);
   private dialog = inject(MatDialog);
   private snack = inject(MatSnackBar);
+  private cashService = inject(CashService);
 
   credits: any[] = [];
+  loans: CashLoan[] = [];
+  filteredLoans: CashLoan[] = [];
+  selectedTab: 'sales' | 'loans' = 'sales';
   filtered: any[] = [];
   search = '';
   loading = true;
 
   get totalOutstanding(): number {
     return this.filtered.reduce((sum, s) => sum + (s.total ?? 0), 0);
+  }
+
+  get loanOutstanding(): number {
+    return this.filteredLoans.reduce((sum, loan) => sum + Number(loan.outstanding || 0), 0);
   }
 
   ngOnInit() { this.load(); }
@@ -141,6 +207,10 @@ export class CreditsComponent implements OnInit {
     this.saleService.getCredits().subscribe({
       next: data => { this.credits = data; this.applyFilter(); this.loading = false; },
       error: () => { this.loading = false; }
+    });
+    this.cashService.getLoans().subscribe({
+      next: loans => { this.loans = loans ?? []; this.applyFilter(); },
+      error: () => { this.loans = []; this.applyFilter(); }
     });
   }
 
@@ -152,6 +222,9 @@ export class CreditsComponent implements OnInit {
           (s.customerName || '').toLowerCase().includes(q)
         )
       : [...this.credits];
+    this.filteredLoans = q
+      ? this.loans.filter(loan => loan.personName.toLowerCase().includes(q) || loan.phoneNumber.toLowerCase().includes(q))
+      : [...this.loans];
   }
 
   recordPayment(sale: any) {

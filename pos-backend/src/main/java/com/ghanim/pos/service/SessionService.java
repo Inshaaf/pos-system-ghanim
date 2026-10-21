@@ -140,7 +140,7 @@ public class SessionService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal cashIn = cashMovementRepository.findBySessionId(id).stream()
-                .filter(m -> "CASH_IN".equals(m.getType()))
+                .filter(m -> "CASH_IN".equals(m.getType()) || "CREDIT_PAYMENT".equals(m.getType()))
                 .map(CashMovement::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 

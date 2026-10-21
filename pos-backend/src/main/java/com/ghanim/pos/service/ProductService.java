@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -120,13 +119,12 @@ public class ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + id));
 
-        String updatedShopCode = request.getShopCode() != null ? request.getShopCode().toUpperCase() : null;
-        BigDecimal updatedCostPrice = product.getCostPrice();
-        boolean shopCodeChanged = !Objects.equals(updatedShopCode, product.getShopCode());
-        if (shopCodeChanged && updatedShopCode != null && !updatedShopCode.isBlank()) {
-            BigDecimal decoded = shopCodeService.decode(updatedShopCode);
-            if (decoded != null) updatedCostPrice = decoded;
-        }
+        String updatedShopCode = request.getShopCode() != null
+                ? request.getShopCode().trim().toUpperCase()
+                : null;
+        BigDecimal updatedCostPrice = updatedShopCode == null || updatedShopCode.isBlank()
+                ? null
+                : shopCodeService.decode(updatedShopCode);
 
         product.setName(request.getName());
         product.setDescription(request.getDescription());
@@ -151,11 +149,6 @@ public class ProductService {
                 supplierRepository.findById(request.getSupplierId()).orElse(null));
 
         Product saved = productRepository.save(product);
-        BigDecimal shopStock = stockLocationRepository
-                .findByProductIdAndLocation(saved.getId(), "SHOP")
-                .map(StockLocation::getQuantity)
-                .orElse(BigDecimal.ZERO);
-        ecommerceSyncService.sync(saved, shopStock);
         return toResponse(saved);
     }
 

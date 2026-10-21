@@ -263,6 +263,18 @@ import { ProductEditRequestService, ProductEditRequest } from '../../../core/ser
             <th mat-header-cell *matHeaderCellDef>Wholesale</th>
             <td mat-cell *matCellDef="let p">LKR {{ p.wholesalePrice | number:'1.2-2' }}</td>
           </ng-container>
+          @if (isOwner) {
+            <ng-container matColumnDef="cost">
+              <th mat-header-cell *matHeaderCellDef>Cost price</th>
+              <td mat-cell *matCellDef="let p">
+                @if (p.costPrice !== null && p.costPrice !== undefined) {
+                  LKR {{ p.costPrice | number:'1.2-2' }}
+                } @else {
+                  <span class="no-code">—</span>
+                }
+              </td>
+            </ng-container>
+          }
           <ng-container matColumnDef="stock">
             <th mat-header-cell *matHeaderCellDef>SHOP Stock</th>
             <td mat-cell *matCellDef="let p">
@@ -312,8 +324,8 @@ import { ProductEditRequestService, ProductEditRequest } from '../../../core/ser
             </td>
           </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="cols"></tr>
-          <tr mat-row *matRowDef="let row; columns: cols;" [class.inactive-row]="!row.active"></tr>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" [class.inactive-row]="!row.active"></tr>
         </table>
         @if (products.length === 0) {
           <div class="empty-state">
@@ -548,7 +560,12 @@ export class ProductListComponent implements OnInit {
   selectedProductsTab: 'stock' | 'quick' = 'stock';
   pageIndex = 0;
   pageSize = 25;
-  cols = ['name', 'code', 'category', 'retail', 'wholesale', 'stock', 'status', 'actions'];
+  private readonly baseColumns = ['name', 'code', 'category', 'retail', 'wholesale', 'stock', 'status', 'actions'];
+  get displayedColumns(): string[] {
+    return this.isOwner
+      ? ['name', 'code', 'category', 'retail', 'wholesale', 'cost', 'stock', 'status', 'actions']
+      : this.baseColumns;
+  }
 
   get pageCount(): number { return Math.max(1, Math.ceil(this.products.length / this.pageSize)); }
   get firstVisibleProduct(): number { return this.products.length ? this.pageIndex * this.pageSize + 1 : 0; }

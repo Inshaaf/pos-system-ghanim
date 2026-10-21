@@ -3,6 +3,7 @@ package com.ghanim.pos.controller;
 import com.ghanim.pos.dto.request.CashMovementRequest;
 import com.ghanim.pos.dto.response.ApiResponse;
 import com.ghanim.pos.entity.CashMovement;
+import com.ghanim.pos.entity.CashLoan;
 import com.ghanim.pos.service.CashService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,5 +32,11 @@ public class CashController {
     @GetMapping("/movements")
     public ResponseEntity<ApiResponse<List<CashMovement>>> getMovements(@RequestParam Long sessionId) {
         return ResponseEntity.ok(ApiResponse.ok(cashService.getMovements(sessionId)));
+    }
+
+    @GetMapping("/loans")
+    public ResponseEntity<ApiResponse<List<CashLoan>>> getLoans(
+            @RequestParam(defaultValue = "false") boolean outstandingOnly) {
+        return ResponseEntity.ok(ApiResponse.ok(cashService.getLoans(outstandingOnly)));
     }
 }

@@ -16,4 +16,7 @@ public class CashMovementRequest {
     private String reason;
     private String notes;
     private Long supplierId;
+    private Long loanId;
+    private String loanPersonName;
+    private String loanPhoneNumber;
 }
