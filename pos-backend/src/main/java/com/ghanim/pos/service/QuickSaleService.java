@@ -25,6 +25,8 @@ public class QuickSaleService {
     private final ProductRepository productRepository;
     private final ManualProductRepository manualProductRepository;
     private final CustomerRepository customerRepository;
+    private final SessionRepository sessionRepository;
+    private final CashMovementRepository cashMovementRepository;
     private final StockService stockService;
     private final ManagerPinService managerPinService;
 
@@ -183,10 +185,19 @@ public class QuickSaleService {
         if (amount == null || amount.compareTo(sale.getTotal()) < 0) {
             throw new IllegalArgumentException("Payment must cover the outstanding quick sale credit");
         }
+        Session paymentSession = sessionRepository.findFirstByStatusOrderByOpenedAtDesc("OPEN")
+                .orElseThrow(() -> new IllegalArgumentException("Open a till session before recording a credit payment"));
         sale.setStatus("COMPLETED");
         sale.setCashTendered(amount);
         sale.setChangeAmount(amount.subtract(sale.getTotal()));
         quickSaleRepository.save(sale);
+        cashMovementRepository.save(CashMovement.builder()
+                .session(paymentSession)
+                .type("CREDIT_PAYMENT")
+                .amount(sale.getTotal())
+                .reason("Credit payment for Quick Sale #" + id + " — " + (sale.getCustomerName() != null ? sale.getCustomerName() : ""))
+                .referenceId(id)
+                .build());
     }
 
     @Transactional

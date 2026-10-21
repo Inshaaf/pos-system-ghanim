@@ -57,15 +57,31 @@ export class CashService {
 
   constructor(private http: HttpClient) {}
 
-  cashIn(sessionId: number, amount: number, reason: string, notes?: string): Observable<CashMovement> {
-    return this.http.post<any>(`${this.base}/in`, { sessionId, amount, reason, notes }).pipe(map(r => r.data));
+  cashIn(sessionId: number, amount: number, reason: string, notes?: string, loanId?: number): Observable<CashMovement> {
+    return this.http.post<any>(`${this.base}/in`, { sessionId, amount, reason, notes, loanId }).pipe(map(r => r.data));
   }
 
-  cashOut(sessionId: number, amount: number, reason: string, notes?: string, supplierId?: number): Observable<CashMovement> {
-    return this.http.post<any>(`${this.base}/out`, { sessionId, amount, reason, notes, supplierId }).pipe(map(r => r.data));
+  cashOut(sessionId: number, amount: number, reason: string, notes?: string, supplierId?: number,
+          loanId?: number, loanPersonName?: string, loanPhoneNumber?: string): Observable<CashMovement> {
+    return this.http.post<any>(`${this.base}/out`, {
+      sessionId, amount, reason, notes, supplierId, loanId, loanPersonName, loanPhoneNumber
+    }).pipe(map(r => r.data));
+  }
+
+  getLoans(outstandingOnly = false): Observable<CashLoan[]> {
+    return this.http.get<any>(`${this.base}/loans`, { params: { outstandingOnly } }).pipe(map(r => r.data));
   }
 
   getMovements(sessionId: number): Observable<CashMovement[]> {
     return this.http.get<any>(`${this.base}/movements`, { params: { sessionId } }).pipe(map(r => r.data));
   }
+}
+
+export interface CashLoan {
+  id: number;
+  personName: string;
+  phoneNumber: string;
+  totalGiven: number;
+  outstanding: number;
+  createdAt: string;
 }

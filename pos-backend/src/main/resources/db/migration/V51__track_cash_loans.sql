@@ -1,0 +1,8 @@
+CREATE TABLE pos.cash_loans (
+    id BIGSERIAL PRIMARY KEY,
+    person_name VARCHAR(255) NOT NULL,
+    phone_number VARCHAR(80) NOT NULL,
+    total_given DECIMAL(10,2) NOT NULL DEFAULT 0,
+    outstanding DECIMAL(10,2) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

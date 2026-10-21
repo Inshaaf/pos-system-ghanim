@@ -34,7 +34,7 @@ public interface SaleItemRepository extends JpaRepository<SaleItem, Long> {
                    ELSE 0 END)
         FROM SaleItem si
         WHERE si.sale.createdAt BETWEEN :from AND :to
-          AND si.sale.status = 'COMPLETED'
+          AND si.sale.status IN ('COMPLETED', 'CREDIT')
           AND si.product IS NOT NULL
         GROUP BY si.product.id, si.productName, si.product.category.name
         ORDER BY SUM(si.quantity) DESC
@@ -56,7 +56,7 @@ public interface SaleItemRepository extends JpaRepository<SaleItem, Long> {
                    ELSE 0 END)
         FROM SaleItem si
         WHERE si.sale.createdAt BETWEEN :from AND :to
-          AND si.sale.status = 'COMPLETED'
+          AND si.sale.status IN ('COMPLETED', 'CREDIT')
         GROUP BY CAST(si.sale.createdAt AS date)
         ORDER BY CAST(si.sale.createdAt AS date)
         """)

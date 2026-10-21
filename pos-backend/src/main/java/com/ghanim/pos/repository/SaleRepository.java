@@ -20,7 +20,7 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
 
     List<Sale> findByStatusOrderByCreatedAtDesc(String status);
 
-    @Query("SELECT s FROM Sale s WHERE s.createdAt BETWEEN :from AND :to AND s.status = 'COMPLETED'")
+    @Query("SELECT s FROM Sale s WHERE s.createdAt BETWEEN :from AND :to AND s.status IN ('COMPLETED', 'CREDIT')")
     List<Sale> findCompletedSalesBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
     @Query("SELECT s FROM Sale s WHERE s.salesperson.id = :id AND s.createdAt BETWEEN :from AND :to")
@@ -32,7 +32,7 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
     @Query("""
         SELECT CAST(s.createdAt AS date), COUNT(s), SUM(s.total)
         FROM Sale s
-        WHERE s.createdAt BETWEEN :from AND :to AND s.status = 'COMPLETED'
+        WHERE s.createdAt BETWEEN :from AND :to AND s.status IN ('COMPLETED', 'CREDIT')
         GROUP BY CAST(s.createdAt AS date)
         ORDER BY CAST(s.createdAt AS date)
         """)

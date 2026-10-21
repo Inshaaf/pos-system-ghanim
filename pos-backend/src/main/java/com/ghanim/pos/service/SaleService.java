@@ -178,13 +178,18 @@ public class SaleService {
         if (!"CREDIT".equals(sale.getStatus())) {
             throw new IllegalArgumentException("Sale is not a pending credit");
         }
+        if (amount == null || amount.compareTo(sale.getTotal()) < 0) {
+            throw new IllegalArgumentException("Payment must cover the outstanding sale credit");
+        }
         sale.setStatus("COMPLETED");
         sale.setCashTendered(amount);
         sale.setChangeAmount(amount.subtract(sale.getTotal()));
         saleRepository.save(sale);
 
+        Session paymentSession = sessionRepository.findFirstByStatusOrderByOpenedAtDesc("OPEN")
+                .orElseThrow(() -> new IllegalArgumentException("Open a till session before recording a credit payment"));
         cashMovementRepository.save(CashMovement.builder()
-                .session(sale.getSession())
+                .session(paymentSession)
                 .type("CREDIT_PAYMENT")
                 .amount(amount)
                 .reason("Credit payment for Sale #" + id + " — " + (sale.getCustomerName() != null ? sale.getCustomerName() : ""))
